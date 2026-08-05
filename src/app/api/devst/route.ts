@@ -76,8 +76,6 @@ async function handleRequest(
       return NextResponse.json({
         status: "success",
         short_url: shortUrl,
-        code: existing.slug,
-        original_url: existing.originalUrl,
       });
     }
     slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
@@ -97,8 +95,6 @@ async function handleRequest(
   return NextResponse.json({
     status: "success",
     short_url: shortUrl,
-    code: link.slug,
-    original_url: link.originalUrl,
   });
 }
 
