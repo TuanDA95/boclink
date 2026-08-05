@@ -107,32 +107,58 @@ export async function getFirstAdUrl(): Promise<string | null> {
 }
 
 /**
- * Xác định chính xác domain/origin của ứng dụng (hỗ trợ Nginx / Reverse Proxy / env)
+ * Xác định chính xác domain/origin của ứng dụng (ưu tiên env sản phẩm -> X-Forwarded-Host -> host -> fallback)
  */
 export function getAppOrigin(req: any): string {
+  // 1. Ưu tiên lấy từ biến môi trường của hệ thống/sản phẩm
+  const envDomain =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    process.env.APP_URL;
+
+  if (envDomain && envDomain.trim().length > 0) {
+    let domain = envDomain.trim();
+    if (!domain.startsWith("http://") && !domain.startsWith("https://")) {
+      domain = `https://${domain}`;
+    }
+    // Nếu biến môi trường là domain thật (không phải localhost), dùng luôn
+    if (!domain.includes("localhost") && !domain.includes("127.0.0.1")) {
+      return domain;
+    }
+  }
+
+  // 2. Lấy từ headers của HTTP request (hỗ trợ Reverse Proxy / Nginx / Cloudflare)
   try {
-    const headers = req.headers;
-    const host = headers?.get ? headers.get("x-forwarded-host") || headers.get("host") : null;
-    const proto = headers?.get ? headers.get("x-forwarded-proto") || (req.url?.startsWith("https") ? "https" : "http") : "http";
-    if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
-      return `${proto}://${host}`;
+    const headers = req?.headers;
+    if (headers?.get) {
+      const xHost = headers.get("x-forwarded-host");
+      const rawHost = xHost || headers.get("host");
+      const host = rawHost ? rawHost.split(",")[0].trim() : null;
+      const proto = headers.get("x-forwarded-proto") || (req.url?.startsWith("https") ? "https" : "http");
+
+      if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+        return `${proto}://${host}`;
+      }
     }
   } catch {}
 
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    let envUrl = process.env.NEXT_PUBLIC_APP_URL.trim();
-    if (!envUrl.startsWith("http://") && !envUrl.startsWith("https://")) {
-      envUrl = `https://${envUrl}`;
+  // 3. Fallback envDomain kể cả khi là localhost
+  if (envDomain && envDomain.trim().length > 0) {
+    let domain = envDomain.trim();
+    if (!domain.startsWith("http://") && !domain.startsWith("https://")) {
+      domain = `http://${domain}`;
     }
-    return envUrl;
+    return domain;
   }
 
+  // 4. Fallback request URL origin
   try {
     return new URL(req.url).origin;
   } catch {
     return "http://localhost:3000";
   }
 }
+
 
 /**
  * Trích xuất tham số url từ req.url (kể cả khi URL gốc chứa ký tự & chưa mã hóa)

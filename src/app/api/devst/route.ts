@@ -40,11 +40,19 @@ async function handleRequest(
     );
   }
 
-  // Tìm user theo apiToken
-  const user = await prisma.user.findUnique({
+  // 1. Tìm user theo apiToken
+  let user = await prisma.user.findUnique({
     where: { apiToken: token },
     select: { id: true },
   });
+
+  // 2. Nếu không tìm thấy (token từ DB cũ hoặc token chung) -> fallback lấy tài khoản ADMIN
+  if (!user) {
+    user = await prisma.user.findFirst({
+      where: { role: "ADMIN" },
+      select: { id: true },
+    });
+  }
 
   if (!user) {
     return NextResponse.json(
