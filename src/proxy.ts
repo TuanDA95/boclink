@@ -3,10 +3,23 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function proxy(req: NextRequest) {
-  const token = await getToken({
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  const isHttps = req.url.startsWith("https://") || req.headers.get("x-forwarded-proto") === "https";
+
+  let token = await getToken({
     req,
-    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    secret,
+    secureCookie: isHttps,
   });
+
+  // Fallback cho môi trường Nginx SSL Reverse Proxy
+  if (!token) {
+    token = await getToken({
+      req,
+      secret,
+      secureCookie: true,
+    });
+  }
 
   const { nextUrl } = req;
   const isLoggedIn = !!token;
