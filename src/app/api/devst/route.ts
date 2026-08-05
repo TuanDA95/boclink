@@ -20,9 +20,16 @@ async function handleRequest(
   code: string | null,
   req: NextRequest
 ) {
-  if (!token || !rawUrl) {
+  if (!token) {
     return NextResponse.json(
-      { status: "error", message: "Thiếu tham số token hoặc url" },
+      { status: "error", message: "Token không hợp lệ" },
+      { status: 400 }
+    );
+  }
+
+  if (!rawUrl) {
+    return NextResponse.json(
+      { status: "error", message: "URL không hợp lệ" },
       { status: 400 }
     );
   }
@@ -57,7 +64,7 @@ async function handleRequest(
   if (!user) {
     return NextResponse.json(
       { status: "error", message: "Token không hợp lệ" },
-      { status: 401 }
+      { status: 400 }
     );
   }
 
