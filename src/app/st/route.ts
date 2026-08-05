@@ -68,25 +68,12 @@ export async function GET(req: NextRequest) {
 
   const origin = getAppOrigin(req);
 
-  // Kiểm tra slug trùng
-  const existing = await prisma.link.findUnique({ where: { slug } });
-  if (existing) {
-    if (existing.userId === user.id) {
-      const shortUrl = `${origin}/l/${existing.slug}`;
-      if (isJsonReq) {
-        return NextResponse.json({
-          status: "success",
-          short_url: shortUrl,
-          code: existing.slug,
-          original_url: existing.originalUrl,
-        });
-      }
-      return NextResponse.redirect(shortUrl, 302);
-    }
-    slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
+  // Đảm bảo slug là duy nhất bằng cách thêm suffix nếu trùng
+  while (await prisma.link.findUnique({ where: { slug } })) {
+    slug = `${slug.split("-")[0]}-${Math.random().toString(36).slice(2, 6)}`;
   }
 
-  // Tạo link mới
+  // Luôn luông tạo bản ghi link mới trong CSDL
   const link = await prisma.link.create({
     data: {
       slug,
@@ -102,8 +89,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       status: "success",
       short_url: shortUrl,
-      code: link.slug,
-      original_url: link.originalUrl,
     });
   }
 
