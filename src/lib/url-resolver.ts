@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getSetting } from "@/lib/settings";
 
 /**
  * Tự động unwrap / gỡ bỏ các lớp link bọc nội bộ (bọc lần 2, 3...)
@@ -87,6 +88,53 @@ export function buildWrappedUrl(adUrl: string, targetUrl: string): string {
 }
 
 /**
+ * Lấy lớp quảng cáo (link bọc) đầu tiên đang bật trong cài đặt hệ thống (AD_LAYERS)
+ */
+export async function getFirstAdUrl(): Promise<string | null> {
+  try {
+    const raw = await getSetting("AD_LAYERS", "[]");
+    const layers = JSON.parse(raw);
+    if (Array.isArray(layers)) {
+      const active = layers.find(
+        (l: any) => l.enabled !== false && String(l.enabled) !== "false" && l.url && l.url.trim().length > 0
+      );
+      if (active) return active.url.trim();
+    }
+  } catch {
+    // Fallback
+  }
+  return null;
+}
+
+/**
+ * Xác định chính xác domain/origin của ứng dụng (hỗ trợ Nginx / Reverse Proxy / env)
+ */
+export function getAppOrigin(req: any): string {
+  try {
+    const headers = req.headers;
+    const host = headers?.get ? headers.get("x-forwarded-host") || headers.get("host") : null;
+    const proto = headers?.get ? headers.get("x-forwarded-proto") || (req.url?.startsWith("https") ? "https" : "http") : "http";
+    if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+      return `${proto}://${host}`;
+    }
+  } catch {}
+
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    let envUrl = process.env.NEXT_PUBLIC_APP_URL.trim();
+    if (!envUrl.startsWith("http://") && !envUrl.startsWith("https://")) {
+      envUrl = `https://${envUrl}`;
+    }
+    return envUrl;
+  }
+
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
+/**
  * Trích xuất tham số url từ req.url (kể cả khi URL gốc chứa ký tự & chưa mã hóa)
  */
 export function extractTargetUrlFromReq(reqUrl: string): string | null {
@@ -121,3 +169,4 @@ export function extractTargetUrlFromReq(reqUrl: string): string | null {
     return null;
   }
 }
+

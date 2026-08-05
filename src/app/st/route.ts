@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { extractTargetUrlFromReq, resolveOriginalUrl } from "@/lib/url-resolver";
+import {
+  extractTargetUrlFromReq,
+  resolveOriginalUrl,
+  getAppOrigin,
+} from "@/lib/url-resolver";
 
 /**
  * GET /st?token={API_TOKEN}&url={TARGET_URL}&code={OPTIONAL_CODE}
- * Quicklink API – tạo link ngắn nhanh, redirect về trang link bọc
+ * Quicklink API – tạo link ngắn nhanh, redirect về trang link rút gọn
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -50,15 +54,14 @@ export async function GET(req: NextRequest) {
     ? code.toLowerCase().replace(/[^a-z0-9-]/g, "")
     : Math.random().toString(36).slice(2, 8);
 
+  const origin = getAppOrigin(req);
+
   // Kiểm tra slug trùng
   const existing = await prisma.link.findUnique({ where: { slug } });
   if (existing) {
-    // Nếu slug đã tồn tại và là của user này → trả về luôn
     if (existing.userId === user.id) {
-      const baseUrl = new URL(req.url).origin;
-      return NextResponse.redirect(`${baseUrl}/l/${slug}`, 302);
+      return NextResponse.redirect(`${origin}/l/${existing.slug}`, 302);
     }
-    // Nếu slug đã tồn tại và của người khác → thêm random suffix
     slug = `${slug}-${Math.random().toString(36).slice(2, 5)}`;
   }
 
@@ -72,6 +75,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const baseUrl = new URL(req.url).origin;
-  return NextResponse.redirect(`${baseUrl}/l/${link.slug}`, 302);
+  return NextResponse.redirect(`${origin}/l/${link.slug}`, 302);
 }
+
+

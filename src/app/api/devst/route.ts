@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { extractTargetUrlFromReq, resolveOriginalUrl } from "@/lib/url-resolver";
+import {
+  extractTargetUrlFromReq,
+  resolveOriginalUrl,
+  getAppOrigin,
+} from "@/lib/url-resolver";
 
 /**
  * Developer API
@@ -8,9 +12,14 @@ import { extractTargetUrlFromReq, resolveOriginalUrl } from "@/lib/url-resolver"
  * POST /api/devst  body: { token, url, code? }
  *
  * Trả về JSON:
- * { "status": "success", "short_url": "...", "code": "...", "original_url": "..." }
+ * { "status": "success", "short_url": "https://domain.com/l/{code}", "code": "{code}", "original_url": "..." }
  */
-async function handleRequest(token: string | null, rawUrl: string | null, code: string | null, origin: string) {
+async function handleRequest(
+  token: string | null,
+  rawUrl: string | null,
+  code: string | null,
+  req: NextRequest
+) {
   if (!token || !rawUrl) {
     return NextResponse.json(
       { status: "error", message: "Thiếu tham số token hoặc url" },
@@ -49,14 +58,16 @@ async function handleRequest(token: string | null, rawUrl: string | null, code: 
     ? code.toLowerCase().replace(/[^a-z0-9-]/g, "")
     : Math.random().toString(36).slice(2, 8);
 
+  const origin = getAppOrigin(req);
+
   // Kiểm tra trùng slug
   const existing = await prisma.link.findUnique({ where: { slug } });
   if (existing) {
     if (existing.userId === user.id) {
-      // Link đã tồn tại thuộc user này → trả về luôn
+      const shortUrl = `${origin}/l/${existing.slug}`;
       return NextResponse.json({
         status: "success",
-        short_url: `${origin}/l/${existing.slug}`,
+        short_url: shortUrl,
         code: existing.slug,
         original_url: existing.originalUrl,
       });
@@ -73,27 +84,31 @@ async function handleRequest(token: string | null, rawUrl: string | null, code: 
     },
   });
 
+  const shortUrl = `${origin}/l/${link.slug}`;
+
   return NextResponse.json({
     status: "success",
-    short_url: `${origin}/l/${link.slug}`,
+    short_url: shortUrl,
     code: link.slug,
     original_url: link.originalUrl,
   });
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url);
+  const { searchParams } = new URL(req.url);
   const rawUrl = extractTargetUrlFromReq(req.url) || searchParams.get("url");
   return handleRequest(
     searchParams.get("token"),
     rawUrl,
     searchParams.get("code"),
-    origin
+    req
   );
 }
 
 export async function POST(req: NextRequest) {
-  const { origin } = new URL(req.url);
   const body = await req.json().catch(() => ({}));
-  return handleRequest(body.token, body.url, body.code ?? null, origin);
+  const rawUrl = body.url ? String(body.url).trim() : null;
+  return handleRequest(body.token ?? null, rawUrl, body.code ?? null, req);
 }
+
+
