@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  role          Role      @default(USER)
+  balance       Float     @default(0)
+  apiToken      String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  links         Link[]
+  purchases     Purchase[]
+  deposits      Deposit[]
+  keys          Key[]
+
+  @@map("users")
+}
+
+model Link {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  originalUrl String     @db.Text
+  title       String?
+  description String?    @db.Text
+  adDuration  Int        @default(15)
+  price       Float      @default(0)
+  isActive    Boolean    @default(true)
+  clicks      Int        @default(0)
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  purchases   Purchase[]
+  keys        Key[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@map("links")
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  linkId    String
+  amount    Float
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link      Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("purchases")
+}
+
+model Deposit {
+  id             String        @id @default(cuid())
+  userId         String
+  amount         Float
+  method         DepositMethod
+  status         DepositStatus @default(PENDING)
+
+  // SePay shared fields
+  sepayOrderCode  String?       @unique
+  sepayTxId       Int?          @unique // idempotency key chống trùng
+  sepayGateway    String?
+  paymentContent  String?       // mã nội dung chuyển khoản
+
+  // Bank transfer fields
+  bankAccount    String?
+  bankName       String?
+  qrCodeUrl      String?       @db.Text
+
+  // Card payment gateway fields
+  cardPaymentUrl String?       @db.Text
+
+  // Phone / Game Scratch Card fields
+  cardTelco      String?       // VIETTEL, VINAPHONE, MOBIFONE, ZING, GATE, GARENA, VCOIN
+  cardCode       String?       // Mã PIN thẻ cào
+  cardSerial     String?       // Số Seri thẻ cào
+  declaredValue  Float?        // Mệnh giá khai báo (10k, 20k, 50k, 100k, 200k, 500k...)
+  realValue      Float?        // Mệnh giá thực tế nhận được sau chiết khấu
+  cardRequestId  String?       @unique // Mã giao dịch gửi cổng gạch thẻ (requestId)
+  cardMessage    String?       // Ghi chú / Thông báo từ cổng gạch thẻ
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+  confirmedAt    DateTime?
+  expiredAt      DateTime?     // hết hạn (bank: 15 phút)
+
+  @@map("deposits")
+}
+
+model Key {
+  id           String    @id @default(cuid())
+  keyCode      String    @unique
+  userId       String?
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  linkId       String?
+  link         Link?     @relation(fields: [linkId], references: [id], onDelete: SetNull)
+  hwid         String?
+  durationDays Int       @default(1)
+  expiresAt    DateTime
+  isUsed       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+
+  @@map("keys")
+}
+
+model Setting {
+  key       String   @id
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+enum DepositMethod {
+  BANK_TRANSFER
+  CARD
+  SCRATCH_CARD
+}
+
+enum DepositStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum Role {
+  ADMIN
+  USER
+}

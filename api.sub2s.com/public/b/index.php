@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy Vip</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0a0f;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+        }
+        
+        /* Overlay để chặn tương tác với iframe */
+        .iframe-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        .iframe-wrapper iframe {
+            width: 100%;
+            height: 780px;
+            border: none;
+            display: block;
+            background: #0a0a0f;
+        }
+        
+        /* Lớp phủ trong suốt để bắt sự kiện click */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: default;
+            pointer-events: none; /* Mặc định không chặn */
+        }
+        
+        /* Vùng chứa các nút thay thế - đặt đè lên iframe */
+        .button-overlay {
+            position: absolute;
+            bottom: 100px;
+            left: 24px;
+            right: 24px;
+            z-index: 20;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            pointer-events: none; /* Cho phép click xuyên qua */
+        }
+        
+        /* Style cho các nút thay thế */
+        .btn-replace {
+            pointer-events: auto; /* Cho phép click vào nút */
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            color: white;
+            font-family: inherit;
+        }
+        
+        .btn-replace i {
+            font-size: 12px;
+        }
+        
+        .btn-unlock {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-unlock:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 25px rgba(245, 87, 108, 0.5);
+        }
+        
+        .btn-cert {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-cert:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: scale(1.03);
+        }
+        
+        /* Loading spinner */
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.05);
+            border-top: 3px solid #f5576c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .iframe-wrapper iframe {
+                height: 700px;
+            }
+            
+            .button-overlay {
+                bottom: 85px;
+                left: 16px;
+                right: 16px;
+                gap: 10px;
+            }
+            
+            .btn-replace {
+                padding: 12px 16px;
+                font-size: 9px;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            .iframe-wrapper iframe {
+                height: 650px;
+            }
+            
+            .button-overlay {
+                bottom: 75px;
+                left: 12px;
+                right: 12px;
+                gap: 8px;
+            }
+            
+            .btn-replace {
+                padding: 10px 12px;
+                font-size: 8px;
+            }
+        }
+        
+        .iframe-wrapper::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .iframe-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .iframe-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(245, 87, 108, 0.3);
+            border-radius: 2px;
+        }
+    </style>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="iframe-wrapper">
+            <div class="loader" id="loader"></div>
+            
+            <iframe 
+                id="mainFrame"
+                src="https://solitudepremium.click/ngoc/v22.php" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+            ></iframe>
+        
+            <div class="overlay" id="overlay"></div>
+        
+            <div class="button-overlay">
+                <a href="https://key.gmvmoba.com/api/keyproxy" class="btn-replace btn-unlock">
+                    <i class="fa-solid fa-unlock-keyhole"></i> GET KEY VIP 
+                </a>
+                <a href="https://gmvmoba.com/buy/solitude.mobileconfig" target="_blank" class="btn-replace btn-cert">
+                    <i class="fa-solid fa-shield-halved"></i> DNS ANTIBAN
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('mainFrame').addEventListener('load', function() {
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        });
+        
+        setTimeout(() => {
+            const loader = document.getElementById('loader');
+            if (loader.style.display !== 'none') {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 300);
+            }
+        }, 5000);
+        
+        document.getElementById('mainFrame').addEventListener('load', function() {
+            try {
+                const iframe = this;
+                const height = iframe.contentWindow.document.documentElement.scrollHeight;
+                iframe.style.height = height + 'px';
+            } catch(e) {
+                console.log('Không thể tự động điều chỉnh chiều cao do CORS');
+            }
+        });
+    </script>
+</body>
+</html>
