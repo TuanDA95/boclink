@@ -8,9 +8,9 @@ import {
 
 /**
  * GET /st?token={API_TOKEN}&url={TARGET_URL}&code={OPTIONAL_CODE}
- * Quicklink API – tạo link ngắn nhanh
- * - Nếu gọi bằng browser: Redirect 302 về /l/{slug}
- * - Nếu yêu cầu JSON/format=json: Trả về JSON { status, short_url, code, original_url }
+ * Quicklink API (Tương thích LinkController.php):
+ * - Khi gọi bình thường: Redirect 302 về {origin}/key/{code} (hoặc text error khi thất bại)
+ * - Khi gọi với format=json hoặc Accept: application/json: Trả về JSON { status, short_url, code, original_url }
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   };
 
   if (!token || !rawUrl) {
-    return sendError("Thiếu tham số token hoặc url", 400);
+    return sendError("URL không hợp lệ", 400);
   }
 
   // Gỡ các lớp bọc nếu là link nội bộ (bọc lần 2, 3...)
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   const existing = await prisma.link.findUnique({ where: { slug } });
   if (existing) {
     if (existing.userId === user.id) {
-      const shortUrl = `${origin}/l/${existing.slug}`;
+      const shortUrl = `${origin}/key/${existing.slug}`;
       if (isJsonReq) {
         return NextResponse.json({
           status: "success",
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  const shortUrl = `${origin}/l/${link.slug}`;
+  const shortUrl = `${origin}/key/${link.slug}`;
 
   if (isJsonReq) {
     return NextResponse.json({
