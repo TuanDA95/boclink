@@ -206,17 +206,31 @@ export default async function AdminDashboard() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {stats.topLinks.map((link, i) => (
-              <div key={link.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 13, color: "#6366f1", fontWeight: 700, width: 22 }}>#{i + 1}</span>
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: "#e2e8f0" }}>{link.title || link.slug}</p>
-                    <p style={{ fontSize: 12, color: "#94a3b8" }}>/{link.slug}</p>
+              <div key={link.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0, flex: 1 }}>
+                  <span style={{ fontSize: 13, color: "#6366f1", fontWeight: 700, width: 22, flexShrink: 0 }}>#{i + 1}</span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: "#e2e8f0",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={link.title || link.slug}
+                    >
+                      {link.title || link.slug}
+                    </p>
+                    <p style={{ fontSize: 12, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      /l/{link.slug}
+                    </p>
                   </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>{link.clicks.toLocaleString()} clicks</p>
-                  <p style={{ fontSize: 12, color: "#94a3b8" }}>{formatVND(link.price)}</p>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", whiteSpace: "nowrap" }}>{link.clicks.toLocaleString()} clicks</p>
+                  <p style={{ fontSize: 12, color: "#94a3b8", whiteSpace: "nowrap" }}>{formatVND(link.price)}</p>
                 </div>
               </div>
             ))}
