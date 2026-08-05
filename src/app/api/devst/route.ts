@@ -72,7 +72,7 @@ async function handleRequest(
   const existing = await prisma.link.findUnique({ where: { slug } });
   if (existing) {
     if (existing.userId === user.id) {
-      const shortUrl = `${origin}/key/${existing.slug}`;
+      const shortUrl = `${origin}/l/${existing.slug}`;
       return NextResponse.json({
         status: "success",
         short_url: shortUrl,
@@ -92,7 +92,7 @@ async function handleRequest(
     },
   });
 
-  const shortUrl = `${origin}/key/${link.slug}`;
+  const shortUrl = `${origin}/l/${link.slug}`;
 
   return NextResponse.json({
     status: "success",
