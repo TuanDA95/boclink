@@ -12,12 +12,13 @@ export default async function AdminDepositsPage() {
     redirect("/");
   }
 
-  const [deposits, stats] = await Promise.all([
+  const [deposits, total, stats] = await Promise.all([
     prisma.deposit.findMany({
       orderBy: { createdAt: "desc" },
-      take: 2000,
+      take: 15,
       include: { user: { select: { name: true, email: true } } },
     }),
+    prisma.deposit.count(),
     prisma.deposit.groupBy({
       by: ["status"],
       _count: true,
@@ -28,6 +29,7 @@ export default async function AdminDepositsPage() {
   return (
     <DepositsClient
       initialDeposits={JSON.parse(JSON.stringify(deposits))}
+      total={total}
       stats={JSON.parse(JSON.stringify(stats))}
     />
   );

@@ -14,14 +14,28 @@ export default async function AdminPurchasesPage() {
     redirect("/");
   }
 
-  const purchases = await prisma.purchase.findMany({
-    include: {
-      user: { select: { id: true, name: true, email: true } },
-      link: { select: { id: true, slug: true, title: true, originalUrl: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 2000,
-  });
+  const [purchases, total, aggregate, count24h] = await Promise.all([
+    prisma.purchase.findMany({
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        link: { select: { id: true, slug: true, title: true, originalUrl: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 15,
+    }),
+    prisma.purchase.count(),
+    prisma.purchase.aggregate({ _sum: { amount: true } }),
+    prisma.purchase.count({
+      where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
+    }),
+  ]);
 
-  return <PurchasesClient initialPurchases={JSON.parse(JSON.stringify(purchases))} />;
+  return (
+    <PurchasesClient
+      initialPurchases={JSON.parse(JSON.stringify(purchases))}
+      total={total}
+      totalRevenue={aggregate._sum.amount || 0}
+      purchases24h={count24h}
+    />
+  );
 }

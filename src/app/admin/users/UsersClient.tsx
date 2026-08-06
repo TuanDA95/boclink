@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Shield, User as UserIcon, Wallet, Edit, Plus, Minus, KeyRound, Check, X } from "lucide-react";
 
 interface UserItem {
@@ -20,7 +20,9 @@ interface Props {
 
 export default function UsersClient({ initialUsers, total }: Props) {
   const [users, setUsers] = useState<UserItem[]>(initialUsers);
+  const [totalCount, setTotalCount] = useState<number>(total);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustType, setAdjustType] = useState<"ADD" | "SUBTRACT">("ADD");
@@ -32,19 +34,41 @@ export default function UsersClient({ initialUsers, total }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
+  const fetchUsers = useCallback(async (page: number, q: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/users?page=${page}&limit=${pageSize}&q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (res.ok && data.users) {
+        setUsers(data.users);
+        setTotalCount(data.total);
+      }
+    } catch (err) {
+      console.error("Lỗi lấy danh sách thành viên:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchUsers(currentPage, search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentPage, search, fetchUsers]);
+
   const handleSearchChange = (val: string) => {
     setSearch(val);
     setCurrentPage(1);
   };
 
-  const filteredUsers = users.filter(
-    (u) =>
-      (u.email?.toLowerCase() ?? "").includes(search.toLowerCase()) ||
-      (u.name?.toLowerCase() ?? "").includes(search.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
-  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   const openAdjustModal = (user: UserItem) => {
     setSelectedUser(user);
@@ -148,7 +172,7 @@ export default function UsersClient({ initialUsers, total }: Props) {
             </tr>
           </thead>
           <tbody>
-            {paginatedUsers.map((user) => (
+            {users.map((user) => (
               <tr key={user.id} className="table-row">
                 <td style={{ padding: "13px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -193,17 +217,17 @@ export default function UsersClient({ initialUsers, total }: Props) {
           </tbody>
         </table>
 
-        {filteredUsers.length === 0 && (
+        {users.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "#475569" }}>
             Không tìm thấy thành viên nào
           </div>
         )}
 
         {/* Pagination Controls */}
-        {filteredUsers.length > 0 && (
+        {users.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#64748b" }}>
-              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, filteredUsers.length)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{filteredUsers.length}</strong> thành viên
+              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, totalCount)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{totalCount}</strong> thành viên
             </div>
 
             {totalPages > 1 && (

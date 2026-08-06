@@ -9,28 +9,49 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
-  const method = searchParams.get("method");
-  const status = searchParams.get("status");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.max(1, parseInt(searchParams.get("limit") || "15"));
+  const status = searchParams.get("status") || "ALL";
+  const q = (searchParams.get("q") || "").trim();
 
-  const where = {
-    ...(method && { method: method as "BANK_TRANSFER" | "CARD" }),
-    ...(status && { status: status as "PENDING" | "SUCCESS" | "FAILED" | "CANCELLED" }),
-  };
+  const whereConditions: any[] = [];
 
-  const [deposits, total] = await Promise.all([
+  if (status !== "ALL") {
+    whereConditions.push({ status });
+  }
+
+  if (q) {
+    whereConditions.push({
+      OR: [
+        { user: { email: { contains: q } } },
+        { user: { name: { contains: q } } },
+        { cardSerial: { contains: q } },
+        { cardCode: { contains: q } },
+        { cardRequestId: { contains: q } },
+        { paymentContent: { contains: q } },
+      ],
+    });
+  }
+
+  const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+  const [deposits, total, stats] = await Promise.all([
     prisma.deposit.findMany({
       where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
-      include: {
-        user: { select: { id: true, email: true, name: true } },
-      },
+      include: { user: { select: { name: true, email: true } } },
     }),
     prisma.deposit.count({ where }),
+    prisma.deposit.groupBy({
+      by: ["status"],
+      _count: true,
+      _sum: { amount: true },
+    }),
   ]);
 
-  return NextResponse.json({ deposits, total, page, limit });
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return NextResponse.json({ deposits, total, totalPages, page, limit, stats });
 }

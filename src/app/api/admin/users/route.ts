@@ -9,11 +9,22 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.max(1, parseInt(searchParams.get("limit") || "15"));
+  const q = (searchParams.get("q") || "").trim();
+
+  const where = q
+    ? {
+        OR: [
+          { email: { contains: q } },
+          { name: { contains: q } },
+        ],
+      }
+    : {};
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -24,13 +35,15 @@ export async function GET(req: NextRequest) {
         role: true,
         balance: true,
         createdAt: true,
-        _count: { select: { purchases: true, deposits: true } },
+        _count: { select: { purchases: true, deposits: true, links: true } },
       },
     }),
-    prisma.user.count(),
+    prisma.user.count({ where }),
   ]);
 
-  return NextResponse.json({ users, total, page, limit });
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return NextResponse.json({ users, total, totalPages, page, limit });
 }
 
 // PATCH update user balance or role

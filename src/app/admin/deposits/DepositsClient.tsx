@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { formatVND } from "@/lib/sepay";
 import { Wallet, CheckCircle, Clock, XCircle, Check, Search, Filter } from "lucide-react";
@@ -36,18 +36,52 @@ interface StatItem {
 
 interface Props {
   initialDeposits: DepositItem[];
+  total: number;
   stats: StatItem[];
 }
 
-export default function DepositsClient({ initialDeposits, stats }: Props) {
+export default function DepositsClient({ initialDeposits, total, stats }: Props) {
   const router = useRouter();
   const [deposits, setDeposits] = useState<DepositItem[]>(initialDeposits);
+  const [totalCount, setTotalCount] = useState<number>(total);
+  const [currentStats, setCurrentStats] = useState<StatItem[]>(stats);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [fetching, setFetching] = useState(false);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
+
+  const fetchDeposits = useCallback(async (page: number, q: string, st: string) => {
+    setFetching(true);
+    try {
+      const res = await fetch(`/api/admin/deposits?page=${page}&limit=${pageSize}&status=${st}&q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (res.ok && data.deposits) {
+        setDeposits(data.deposits);
+        setTotalCount(data.total);
+        if (data.stats) setCurrentStats(data.stats);
+      }
+    } catch (err) {
+      console.error("Lỗi lấy danh sách nạp tiền:", err);
+    } finally {
+      setFetching(false);
+    }
+  }, []);
+
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchDeposits(currentPage, search, statusFilter);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentPage, search, statusFilter, fetchDeposits]);
 
   const handleSearchChange = (val: string) => {
     setSearch(val);
@@ -59,24 +93,7 @@ export default function DepositsClient({ initialDeposits, stats }: Props) {
     setCurrentPage(1);
   };
 
-  const filteredDeposits = deposits.filter((dep) => {
-    const matchStatus = statusFilter === "ALL" || dep.status === statusFilter;
-    const q = search.toLowerCase().trim();
-    if (!q) return matchStatus;
-
-    const matchSearch =
-      (dep.user.name?.toLowerCase() ?? "").includes(q) ||
-      (dep.user.email?.toLowerCase() ?? "").includes(q) ||
-      (dep.cardSerial?.toLowerCase() ?? "").includes(q) ||
-      (dep.cardCode?.toLowerCase() ?? "").includes(q) ||
-      (dep.cardRequestId?.toLowerCase() ?? "").includes(q) ||
-      (dep.paymentContent?.toLowerCase() ?? "").includes(q);
-
-    return matchStatus && matchSearch;
-  });
-
-  const totalPages = Math.ceil(filteredDeposits.length / pageSize) || 1;
-  const paginatedDeposits = filteredDeposits.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   const successStat = stats.find((s) => s.status === "SUCCESS");
   const pendingStat = stats.find((s) => s.status === "PENDING");
@@ -253,7 +270,7 @@ export default function DepositsClient({ initialDeposits, stats }: Props) {
             </tr>
           </thead>
           <tbody>
-            {paginatedDeposits.map((dep) => {
+            {deposits.map((dep) => {
               const isCard = dep.method === "SCRATCH_CARD" || dep.method === "CARD";
               const isSuccess = dep.status === "SUCCESS";
               const isLoading = loadingId === dep.id;
@@ -360,17 +377,17 @@ export default function DepositsClient({ initialDeposits, stats }: Props) {
           </tbody>
         </table>
 
-        {filteredDeposits.length === 0 && (
+        {deposits.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "#94a3b8" }}>
             Không tìm thấy đơn nạp tiền nào
           </div>
         )}
 
         {/* Pagination Controls */}
-        {filteredDeposits.length > 0 && (
+        {deposits.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#64748b" }}>
-              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, filteredDeposits.length)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{filteredDeposits.length}</strong> đơn nạp
+              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, totalCount)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{totalCount}</strong> đơn nạp
             </div>
 
             {totalPages > 1 && (

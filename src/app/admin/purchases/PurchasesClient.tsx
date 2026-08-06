@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, ShoppingBag, DollarSign, Calendar, ExternalLink, User } from "lucide-react";
 
 export interface PurchaseItem {
@@ -22,59 +22,64 @@ export interface PurchaseItem {
 
 interface Props {
   initialPurchases: PurchaseItem[];
+  total: number;
+  totalRevenue: number;
+  purchases24h: number;
 }
 
-export default function PurchasesClient({ initialPurchases }: Props) {
+export default function PurchasesClient({ initialPurchases, total, totalRevenue: initRevenue, purchases24h: init24h }: Props) {
   const [purchases, setPurchases] = useState<PurchaseItem[]>(initialPurchases);
+  const [totalCount, setTotalCount] = useState<number>(total);
+  const [totalRevenue, setTotalRevenue] = useState<number>(initRevenue);
+  const [purchases24h, setPurchases24h] = useState<number>(init24h);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  const handleSearchChange = (val: string) => {
-    setSearchTerm(val);
-    setCurrentPage(1);
-  };
-
-  // Quick stats calculation
-  const totalPurchases = purchases.length;
-  const totalRevenue = purchases.reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const purchases24h = purchases.filter((p) => {
-    const timeDiff = Date.now() - new Date(p.createdAt).getTime();
-    return timeDiff <= 24 * 60 * 60 * 1000;
-  }).length;
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchPurchases = useCallback(async (page: number, q: string) => {
     setLoading(true);
-    setCurrentPage(1);
     try {
-      const res = await fetch(`/api/admin/purchases?q=${encodeURIComponent(searchTerm)}`);
+      const res = await fetch(`/api/admin/purchases?page=${page}&limit=${pageSize}&q=${encodeURIComponent(q)}`);
       const data = await res.json();
       if (res.ok && data.purchases) {
         setPurchases(data.purchases);
+        setTotalCount(data.total);
+        if (data.totalRevenue !== undefined) setTotalRevenue(data.totalRevenue);
+        if (data.purchases24h !== undefined) setPurchases24h(data.purchases24h);
       }
     } catch {
       // ignore
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchPurchases(currentPage, searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [currentPage, searchTerm, fetchPurchases]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchTerm(val);
+    setCurrentPage(1);
   };
 
-  const filtered = purchases.filter((p) => {
-    if (!searchTerm.trim()) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      (p.user.name && p.user.name.toLowerCase().includes(term)) ||
-      p.user.email.toLowerCase().includes(term) ||
-      p.link.slug.toLowerCase().includes(term) ||
-      (p.link.title && p.link.title.toLowerCase().includes(term))
-    );
-  });
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPurchases(1, searchTerm);
+  };
 
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paginatedPurchases = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   return (
     <>
@@ -201,7 +206,7 @@ export default function PurchasesClient({ initialPurchases }: Props) {
             <ShoppingBag size={22} />
           </div>
           <div>
-            <div className="stat-num">{totalPurchases}</div>
+            <div className="stat-num">{totalCount}</div>
             <div className="stat-label">Tổng lượt mua</div>
           </div>
         </div>
@@ -231,7 +236,7 @@ export default function PurchasesClient({ initialPurchases }: Props) {
       <div className="table-card">
         <div className="table-hd">
           <div style={{ fontWeight: 600, color: "#e2e8f0", fontSize: "1rem" }}>
-            Danh sách giao dịch ({filtered.length})
+            Danh sách giao dịch ({totalCount})
           </div>
           <form className="search-wrap" onSubmit={handleSearch}>
             <Search size={16} color="#64748b" />
@@ -245,7 +250,7 @@ export default function PurchasesClient({ initialPurchases }: Props) {
           </form>
         </div>
 
-        {filtered.length === 0 ? (
+        {purchases.length === 0 ? (
           <div className="empty-box">
             🛒 Chưa có giao dịch mua link nào.
           </div>
@@ -263,7 +268,7 @@ export default function PurchasesClient({ initialPurchases }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {paginatedPurchases.map((item, idx) => {
+                {purchases.map((item, idx) => {
                   const indexNum = (currentPage - 1) * pageSize + idx + 1;
                   const dateStr = new Date(item.createdAt).toLocaleString("vi-VN", {
                     hour12: false,
@@ -314,10 +319,10 @@ export default function PurchasesClient({ initialPurchases }: Props) {
         )}
 
         {/* Pagination Controls */}
-        {filtered.length > 0 && (
+        {purchases.length > 0 && (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 12 }}>
             <div style={{ fontSize: "0.83rem", color: "#64748b" }}>
-              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, filtered.length)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{filtered.length}</strong> giao dịch
+              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, totalCount)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{totalCount}</strong> giao dịch
             </div>
 
             {totalPages > 1 && (
