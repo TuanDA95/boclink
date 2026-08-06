@@ -81,7 +81,7 @@ export default function AdminSidebar({ isOpen, onClose }: SidebarProps) {
               <Zap size={16} color="white" />
             </div>
             <span style={{ fontWeight: 700, fontSize: 18, color: "#e2e8f0" }}>
-              Sub2S
+              API Key
             </span>
             <span
               style={{

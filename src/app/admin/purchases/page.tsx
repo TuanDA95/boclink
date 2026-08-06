@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import PurchasesClient from "./PurchasesClient";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Lịch sử mua link - Admin Sub2S" };
+export const metadata: Metadata = { title: "Lịch sử mua link - Admin API Key" };
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 

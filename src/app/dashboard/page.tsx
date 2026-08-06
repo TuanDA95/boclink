@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Dashboard - Sub2S" };
+export const metadata: Metadata = { title: "Dashboard - API Key" };
 
 export default async function DashboardPage() {
   const session = await auth();

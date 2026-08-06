@@ -69,7 +69,7 @@ export default function AdminLayoutClient({
               >
                 <Zap size={14} color="white" />
               </div>
-              <span style={{ fontWeight: 700, fontSize: 16, color: "#e2e8f0" }}>Sub2S</span>
+              <span style={{ fontWeight: 700, fontSize: 16, color: "#e2e8f0" }}>API Key</span>
               <span
                 style={{
                   fontSize: 9,

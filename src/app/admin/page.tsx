@@ -127,7 +127,7 @@ export default async function AdminDashboard() {
     <div className="animate-fade-in">
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0" }}>Dashboard</h1>
-        <p style={{ color: "#94a3b8", marginTop: 4 }}>Tổng quan hệ thống & doanh thu Sub2S</p>
+        <p style={{ color: "#94a3b8", marginTop: 4 }}>Tổng quan hệ thống & doanh thu API Key</p>
       </div>
 
       {/* Stat Cards - responsive grid */}

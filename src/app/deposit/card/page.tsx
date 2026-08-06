@@ -6,7 +6,7 @@ import { TELCOS } from "@/lib/scratchCard";
 import CardDepositClient from "./CardDepositClient";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Nạp tiền Thẻ Cào - Sub2S" };
+export const metadata: Metadata = { title: "Nạp tiền Thẻ Cào - API Key" };
 
 export default async function ScratchCardDepositPage() {
   const session = await auth();

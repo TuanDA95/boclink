@@ -29,7 +29,7 @@ interface Props {
   initialFreeEnabled: boolean;
   initialDefaultPrice: number;
   initialAdLayers: AdLayer[];
-  initialInterstitialAdUrl: string;
+  initialInterstitialAdLayers: AdLayer[];
 }
 
 function genId() {
@@ -48,12 +48,17 @@ function toast(msg: string, icon = "success") {
   }
 }
 
-export default function SystemSettingsClient({ initialFreeEnabled, initialDefaultPrice, initialAdLayers, initialInterstitialAdUrl }: Props) {
+export default function SystemSettingsClient({
+  initialFreeEnabled,
+  initialDefaultPrice,
+  initialAdLayers,
+  initialInterstitialAdLayers,
+}: Props) {
   const router = useRouter();
-  const [freeEnabled,        setFreeEnabled]        = useState(initialFreeEnabled);
-  const [defaultPrice,       setDefaultPrice]       = useState(initialDefaultPrice.toString());
-  const [adLayers,           setAdLayers]           = useState<AdLayer[]>(initialAdLayers);
-  const [interstitialAdUrl,  setInterstitialAdUrl]  = useState(initialInterstitialAdUrl);
+  const [freeEnabled,          setFreeEnabled]          = useState(initialFreeEnabled);
+  const [defaultPrice,         setDefaultPrice]         = useState(initialDefaultPrice.toString());
+  const [adLayers,             setAdLayers]             = useState<AdLayer[]>(initialAdLayers);
+  const [interstitialAdLayers, setInterstitialAdLayers] = useState<AdLayer[]>(initialInterstitialAdLayers);
 
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingLayers,  setSavingLayers]  = useState(false);
@@ -61,15 +66,24 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
 
   /* ── Save all settings ── */
   const saveAll = async () => {
-    // Chỉ validate URL với các lớp đang BẬT
-    const invalidEnabled = adLayers.find((l) => l.enabled && !l.url.trim());
-    if (invalidEnabled) {
-      toast(`Lớp "${invalidEnabled.name}" đang bật nhưng chưa có đường dẫn`, "warning");
+    // Validate URL với các bọc link đang BẬT
+    const invalidWrap = adLayers.find((l) => l.enabled && !l.url.trim());
+    if (invalidWrap) {
+      toast(`Bọc link "${invalidWrap.name}" đang bật nhưng chưa có đường dẫn`, "warning");
+      return;
+    }
+    const invalidAd = interstitialAdLayers.find((l) => l.enabled && !l.url.trim());
+    if (invalidAd) {
+      toast(`Quảng cáo hình ảnh "${invalidAd.name}" đang bật nhưng chưa có đường dẫn`, "warning");
       return;
     }
 
     setSavingGeneral(true);
     setSavingLayers(true);
+    setSavingAd(true);
+
+    const firstInterstitialUrl = interstitialAdLayers.find((l) => l.enabled && l.url.trim())?.url.trim() || "";
+
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
@@ -78,7 +92,8 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
           FREE_LINK_ENABLED: freeEnabled ? "true" : "false",
           DEFAULT_LINK_PRICE: defaultPrice,
           AD_LAYERS: JSON.stringify(adLayers),
-          INTERSTITIAL_AD_URL: interstitialAdUrl.trim(),
+          INTERSTITIAL_AD_LAYERS: JSON.stringify(interstitialAdLayers),
+          INTERSTITIAL_AD_URL: firstInterstitialUrl,
         }),
       });
       const data = await res.json();
@@ -93,6 +108,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
     } finally {
       setSavingGeneral(false);
       setSavingLayers(false);
+      setSavingAd(false);
     }
   };
 
@@ -100,25 +116,34 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
   const saveLayers  = saveAll;
 
   const saveInterstitialAd = async () => {
+    const invalidAd = interstitialAdLayers.find((l) => l.enabled && !l.url.trim());
+    if (invalidAd) {
+      toast(`Quảng cáo "${invalidAd.name}" đang bật nhưng chưa có đường dẫn`, "warning");
+      return;
+    }
+
     setSavingAd(true);
+    const firstInterstitialUrl = interstitialAdLayers.find((l) => l.enabled && l.url.trim())?.url.trim() || "";
+
     try {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ INTERSTITIAL_AD_URL: interstitialAdUrl.trim() }),
+        body: JSON.stringify({
+          INTERSTITIAL_AD_LAYERS: JSON.stringify(interstitialAdLayers),
+          INTERSTITIAL_AD_URL: firstInterstitialUrl,
+        }),
       });
       const data = await res.json();
-      if (res.ok) { toast("Đã lưu URL quảng cáo hình ảnh!"); router.refresh(); }
+      if (res.ok) { toast("Đã lưu quảng cáo hình ảnh!"); router.refresh(); }
       else toast(data.error || "Lỗi lưu", "error");
     } catch { toast("Lỗi kết nối", "error"); }
     finally { setSavingAd(false); }
   };
 
-
-
-  /* ── CRUD ── */
+  /* ── CRUD for Bọc link (adLayers) ── */
   const addLayer = () => {
-    const layer: AdLayer = { id: genId(), name: "Lớp quảng cáo mới", region: "all", enabled: true, url: "", order: adLayers.length };
+    const layer: AdLayer = { id: genId(), name: "Bọc link mới", region: "all", enabled: true, url: "", order: adLayers.length };
     setAdLayers((p) => [...p, layer]);
   };
 
@@ -128,7 +153,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
   const del = (id: string) => {
     if (typeof Swal !== "undefined") {
       Swal.fire({
-        title: "Xoá lớp quảng cáo này?",
+        title: "Xoá bọc link này?",
         icon: "warning", showCancelButton: true,
         confirmButtonColor: "#ef4444", cancelButtonColor: "#444",
         confirmButtonText: "Xoá", cancelButtonText: "Huỷ",
@@ -141,6 +166,40 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
 
   const move = (id: string, dir: "up" | "down") => {
     setAdLayers((prev) => {
+      const idx = prev.findIndex((l) => l.id === id);
+      const to  = dir === "up" ? idx - 1 : idx + 1;
+      if (to < 0 || to >= prev.length) return prev;
+      const a = [...prev];
+      [a[idx], a[to]] = [a[to], a[idx]];
+      return a.map((l, i) => ({ ...l, order: i }));
+    });
+  };
+
+  /* ── CRUD for Quảng cáo hình ảnh (interstitialAdLayers) ── */
+  const addInterstitialLayer = () => {
+    const layer: AdLayer = { id: genId(), name: "Quảng cáo hình ảnh mới", region: "all", enabled: true, url: "", order: interstitialAdLayers.length };
+    setInterstitialAdLayers((p) => [...p, layer]);
+  };
+
+  const updInterstitial = (id: string, patch: Partial<AdLayer>) =>
+    setInterstitialAdLayers((p) => p.map((l) => l.id === id ? { ...l, ...patch } : l));
+
+  const delInterstitial = (id: string) => {
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        title: "Xoá quảng cáo hình ảnh này?",
+        icon: "warning", showCancelButton: true,
+        confirmButtonColor: "#ef4444", cancelButtonColor: "#444",
+        confirmButtonText: "Xoá", cancelButtonText: "Huỷ",
+        background: "#16161a", color: "#fff",
+      }).then((r: any) => { if (r.isConfirmed) setInterstitialAdLayers((p) => p.filter((l) => l.id !== id)); });
+    } else {
+      setInterstitialAdLayers((p) => p.filter((l) => l.id !== id));
+    }
+  };
+
+  const moveInterstitial = (id: string, dir: "up" | "down") => {
+    setInterstitialAdLayers((prev) => {
       const idx = prev.findIndex((l) => l.id === id);
       const to  = dir === "up" ? idx - 1 : idx + 1;
       if (to < 0 || to >= prev.length) return prev;
@@ -286,7 +345,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
       `}</style>
 
       <h1 className="sc-title">Cấu hình hệ thống</h1>
-      <p className="sc-sub">Quản lý chức năng và quảng cáo của Sub2S</p>
+      <p className="sc-sub">Quản lý chức năng và quảng cáo của API Key</p>
 
       {/* ═══ CARD 1 – Cấu hình chung ═══ */}
       <div className="sc-card">
@@ -333,47 +392,104 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
       <div className="sc-card">
         <div className="sc-card-hd">
           <div className="sc-card-title">
-            🖼️ Quảng cáo hình ảnh (Interstitial)
+            🖼️ Quảng cáo hình ảnh ({interstitialAdLayers.length})
             <span style={{ fontSize: ".72rem", color: "#64748b", fontWeight: 400 }}>
-              — URL mở khi người dùng nhấn vào ảnh tại trang vượt link
+              — Cấu hình nhiều bước quảng cáo khi người dùng nhấn vào ảnh tại trang vượt link
             </span>
           </div>
-        </div>
-        <div className="sc-card-body">
-          <p style={{ fontSize: ".82rem", color: "#64748b", marginBottom: 12 }}>
-            Đường dẫn quảng cáo sẽ được mở trong tab mới khi người dùng nhấp vào ảnh xác nhận.
-            Để trống nếu không muốn mở quảng cáo khi nhấn ảnh.
-          </p>
-          <div className="url-row" style={{ padding: 0 }}>
-            <Link2 size={14} className="url-icon" />
-            <input
-              className="url-input"
-              type="url"
-              value={interstitialAdUrl}
-              placeholder="https://ads.example.com/show?id=..."
-              onChange={(e) => setInterstitialAdUrl(e.target.value)}
-              style={{ flex: 1 }}
-            />
-          </div>
-        </div>
-        <div className="sc-card-ft">
-          <button className="btn-save" onClick={saveInterstitialAd} disabled={savingAd}>
-            {savingAd ? <><span className="spin-xs" /> Đang lưu...</> : <><Save size={13} /> Lưu</>}
+          <button className="btn-add" onClick={addInterstitialLayer}>
+            <Plus size={14} /> Thêm quảng cáo
           </button>
         </div>
+        <div className="sc-card-body" style={{ paddingTop: 14 }}>
+          {interstitialAdLayers.length === 0 ? (
+            <div className="empty">
+              <span className="empty-icon">📭</span>
+              Chưa có quảng cáo hình ảnh nào.<br />Nhấn <strong>Thêm quảng cáo</strong> để bắt đầu.
+            </div>
+          ) : (
+            interstitialAdLayers.map((layer, idx) => {
+              const rm = REGION_LABELS[layer.region];
+              return (
+                <div key={layer.id} className={`layer-card${layer.enabled ? "" : " off"}`}>
+                  <div className="layer-row">
+                    <button className="i-btn i-move" onClick={() => moveInterstitial(layer.id, "up")} disabled={idx === 0} title="Lên">
+                      <ChevronUp size={15} />
+                    </button>
+                    <button className="i-btn i-move" onClick={() => moveInterstitial(layer.id, "down")} disabled={idx === interstitialAdLayers.length - 1} title="Xuống">
+                      <ChevronDown size={15} />
+                    </button>
+
+                    <input
+                      className="layer-name-input"
+                      value={layer.name}
+                      placeholder="Tên quảng cáo"
+                      onChange={(e) => updInterstitial(layer.id, { name: e.target.value })}
+                    />
+
+                    <select
+                      className="region-select"
+                      value={layer.region}
+                      onChange={(e) => updInterstitial(layer.id, { region: e.target.value as AdLayer["region"] })}
+                    >
+                      <option value="all">🌐 Tất cả</option>
+                      <option value="international">🌍 Quốc tế</option>
+                      <option value="vietnam">🇻🇳 Việt Nam</option>
+                    </select>
+
+                    <span
+                      className="badge-region"
+                      style={{ background: `${rm.color}18`, color: rm.color, border: `1px solid ${rm.color}30` }}
+                    >
+                      {rm.emoji}
+                    </span>
+
+                    <button className="i-btn i-tog" onClick={() => updInterstitial(layer.id, { enabled: !layer.enabled })} title={layer.enabled ? "Tắt" : "Bật"}>
+                      {layer.enabled
+                        ? <ToggleRight size={26} color="#10b981" />
+                        : <ToggleLeft  size={26} color="#475569" />}
+                    </button>
+
+                    <button className="i-btn i-del" onClick={() => delInterstitial(layer.id)} title="Xoá">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+
+                  <div className="url-row">
+                    <Globe size={14} className="url-icon" />
+                    <input
+                      className="url-input"
+                      type="url"
+                      value={layer.url}
+                      placeholder="https://ads.example.com/show?id=..."
+                      onChange={(e) => updInterstitial(layer.id, { url: e.target.value })}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        {interstitialAdLayers.length > 0 && (
+          <div className="sc-card-ft">
+            <button className="btn-save" onClick={saveInterstitialAd} disabled={savingAd}>
+              {savingAd ? <><span className="spin-xs" /> Đang lưu...</> : <><Save size={13} /> Lưu quảng cáo hình ảnh</>}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* ═══ CARD 3 – Lớp quảng cáo ═══ */}
+      {/* ═══ CARD 3 – Bọc link ═══ */}
       <div className="sc-card">
         <div className="sc-card-hd">
           <div className="sc-card-title">
-            📺 Lớp quảng cáo ({adLayers.length})
+            🔗 Bọc link ({adLayers.length})
             <span style={{ fontSize: ".72rem", color: "#64748b", fontWeight: 400 }}>
               — Chèn vào trang đếm ngược khi vượt link miễn phí
             </span>
           </div>
           <button className="btn-add" onClick={addLayer}>
-            <Plus size={14} /> Thêm lớp
+            <Plus size={14} /> Thêm bọc link
           </button>
         </div>
 
@@ -381,7 +497,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
           {adLayers.length === 0 ? (
             <div className="empty">
               <span className="empty-icon">📭</span>
-              Chưa có lớp quảng cáo nào.<br />Nhấn <strong>Thêm lớp</strong> để bắt đầu.
+              Chưa có bọc link nào.<br />Nhấn <strong>Thêm bọc link</strong> để bắt đầu.
             </div>
           ) : (
             adLayers.map((layer, idx) => {
@@ -402,7 +518,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
                     <input
                       className="layer-name-input"
                       value={layer.name}
-                      placeholder="Tên lớp quảng cáo"
+                      placeholder="Tên bọc link"
                       onChange={(e) => upd(layer.id, { name: e.target.value })}
                     />
 
@@ -458,7 +574,7 @@ export default function SystemSettingsClient({ initialFreeEnabled, initialDefaul
         {adLayers.length > 0 && (
           <div className="sc-card-ft">
             <button className="btn-save" onClick={saveLayers} disabled={savingLayers}>
-              {savingLayers ? <><span className="spin-xs" /> Đang lưu...</> : <><Save size={13} /> Lưu lớp quảng cáo</>}
+              {savingLayers ? <><span className="spin-xs" /> Đang lưu...</> : <><Save size={13} /> Lưu bọc link</>}
             </button>
           </div>
         )}

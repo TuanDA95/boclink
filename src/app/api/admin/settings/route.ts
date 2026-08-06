@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getSetting, saveSettings } from "@/lib/settings";
 
-// 3 setting keys chính
+// setting keys chính
 export const CORE_SETTING_KEYS = [
-  "FREE_LINK_ENABLED",   // "true" | "false"
-  "DEFAULT_LINK_PRICE",  // số đồng, VD "5000"
-  "AD_LAYERS",           // JSON string của AdLayer[]
+  "FREE_LINK_ENABLED",        // "true" | "false"
+  "DEFAULT_LINK_PRICE",       // số đồng, VD "5000"
+  "AD_LAYERS",                // JSON string của AdLayer[] (Bọc link)
+  "INTERSTITIAL_AD_LAYERS",   // JSON string của AdLayer[] (Quảng cáo hình ảnh)
 ] as const;
 
 export const CORE_SETTING_DEFAULTS: Record<string, string> = {
   FREE_LINK_ENABLED: "true",
   DEFAULT_LINK_PRICE: "5000",
   AD_LAYERS: "[]",
+  INTERSTITIAL_AD_LAYERS: "[]",
 };
 
 // GET all core settings

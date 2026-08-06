@@ -25,8 +25,9 @@ interface Props {
   userBalance: number;
   freeLinkEnabled?: boolean;
   adClickUrl?: string;
-  adUrls?: string[];         // dùng để bọc link khi bấm Tiếp tục
-  interstitialAdUrl?: string; // URL mở khi nhấn ảnh
+  adUrls?: string[];              // dùng để bọc link khi bấm Tiếp tục
+  interstitialAdUrls?: string[];  // danh sách URL quảng cáo hình ảnh
+  interstitialAdUrl?: string;     // URL mở khi nhấn ảnh (fallback)
 }
 
 type Screen = "loading" | "main" | "interstitial" | "revealed";
@@ -36,7 +37,7 @@ const UNLOCKED_IMG = "/unlock.png";
 const LOCKED_IMG = "/lock.png";
 
 
-export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, userBalance, freeLinkEnabled = true, adClickUrl = "", adUrls = [], interstitialAdUrl = "" }: Props) {
+export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, userBalance, freeLinkEnabled = true, adClickUrl = "", adUrls = [], interstitialAdUrls = [], interstitialAdUrl = "" }: Props) {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>("loading");
   const [imageClicked, setImageClicked] = useState(false);
@@ -46,11 +47,20 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
   const [buying, setBuying] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [currentInterstitialStep, setCurrentInterstitialStep] = useState(0);
+  const [isWaitingStepTimer, setIsWaitingStepTimer] = useState(false);
+  const [stepTimer, setStepTimer] = useState(0);
   const swalLoaded = useRef(false);
 
   // adUrls chỉ dùng để bọc URL khi "Tiếp tục"
   const wrapAdUrls = adUrls && adUrls.length > 0 ? adUrls : (adClickUrl ? [adClickUrl] : []);
   const totalAdLayers = wrapAdUrls.length;
+
+  // Danh sách các URL quảng cáo hình ảnh (interstitial)
+  const activeInterstitialUrls = interstitialAdUrls && interstitialAdUrls.length > 0
+    ? interstitialAdUrls
+    : (interstitialAdUrl.trim() ? [interstitialAdUrl.trim()] : []);
+  const totalInterstitialSteps = activeInterstitialUrls.length;
 
   // Simulate IP/geo check then show main UI
   useEffect(() => {
@@ -71,21 +81,48 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
     setBtnEnabled(false);
     setCurrentImg(LOCKED_IMG);
     setCurrentAdIndex(0);
+    setCurrentInterstitialStep(0);
+    setIsWaitingStepTimer(false);
+    setStepTimer(0);
   };
 
   const onImageClick = () => {
-    if (imageClicked) return;
+    if (imageClicked || isWaitingStepTimer) return;
 
-    // Mở URL quảng cáo được cấu hình riêng cho interstitial (nếu có)
-    if (interstitialAdUrl.trim()) {
-      window.open(interstitialAdUrl.trim(), "_blank");
-    }
-
-    setImageClicked(true);
-    setTimeout(() => {
+    if (totalInterstitialSteps === 0) {
       setCurrentImg(UNLOCKED_IMG);
       setBtnEnabled(true);
-    }, 5000);
+      setImageClicked(true);
+      return;
+    }
+
+    const currentUrl = activeInterstitialUrls[currentInterstitialStep];
+    if (currentUrl && currentUrl.trim()) {
+      window.open(currentUrl.trim(), "_blank");
+    }
+
+    setIsWaitingStepTimer(true);
+    setStepTimer(5);
+
+    const stepIdx = currentInterstitialStep;
+    const interval = setInterval(() => {
+      setStepTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setIsWaitingStepTimer(false);
+          const nextStep = stepIdx + 1;
+          if (nextStep >= totalInterstitialSteps) {
+            setCurrentImg(UNLOCKED_IMG);
+            setBtnEnabled(true);
+            setImageClicked(true);
+          } else {
+            setCurrentInterstitialStep(nextStep);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   const continueToFreeLink = async () => {
@@ -529,7 +566,10 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
         }
         .interstitial-img-wrap img {
           width: 100%;
+          max-height: 280px;
+          object-fit: contain;
           display: block;
+          background: rgba(0,0,0,0.4);
         }
         .tap-hint {
           position: absolute;
@@ -604,24 +644,24 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
               <div className={`options-grid${freeLinkEnabled ? "" : " single-col"}`}>
                 {/* Free option — chỉ hiện khi freeLinkEnabled */}
                 {freeLinkEnabled && (
-                <div className="option-box free-box">
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div className="option-icon-cyan">⌛</div>
-                    <div className="option-title-cyan">MIỄN PHÍ</div>
-                    
-                    <div className="layer-badge-cyan">
-                      <i className="bi bi-layers" style={{ marginRight: 6 }} />
-                      {totalAdLayers > 0 ? `${totalAdLayers} lớp bảo vệ` : "Miễn phí"}
+                  <div className="option-box free-box">
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <div className="option-icon-cyan">⌛</div>
+                      <div className="option-title-cyan">MIỄN PHÍ</div>
+
+                      <div className="layer-badge-cyan">
+                        <i className="bi bi-layers" style={{ marginRight: 6 }} />
+                        {totalAdLayers > 0 ? `${totalAdLayers} lớp bảo vệ` : "Miễn phí"}
+                      </div>
+
+                      <div className="free-desc-text">
+                        <strong>VN</strong> Vượt link mã
+                      </div>
                     </div>
-                    
-                    <div className="free-desc-text">
-                      <strong>VN</strong> Vượt link mã
-                    </div>
+                    <button className="btn-custom btn-free" onClick={startFreeFlow}>
+                      BẮT ĐẦU VƯỢT LINK
+                    </button>
                   </div>
-                  <button className="btn-custom btn-free" onClick={startFreeFlow}>
-                    BẮT ĐẦU VƯỢT LINK
-                  </button>
-                </div>
                 )}
 
                 {/* Buy option */}
@@ -681,20 +721,19 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
               <div
                 className="interstitial-img-wrap"
                 onClick={onImageClick}
-                style={{ pointerEvents: imageClicked ? "none" : "auto" }}
+                style={{ pointerEvents: (btnEnabled || isWaitingStepTimer) ? "none" : "auto" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={currentImg} alt="Xác minh" />
                 <div className="tap-hint">
                   {btnEnabled
                     ? "Đã mở khóa! Bấm nút bên dưới ↓"
-                    : imageClicked
-                    ? "Đang xử lý... vui lòng đợi 5 giây"
-                    : totalAdLayers > 1
-                    ? `Nhấn vào ảnh để xác nhận (${totalAdLayers} lớp sẽ được bọc tự động)`
-                    : "Nhấn vào ảnh để tiếp tục"}
+                    : isWaitingStepTimer
+                      ? `Đang xử lý bước ${currentInterstitialStep + 1}/${totalInterstitialSteps}... vui lòng đợi ${stepTimer}s`
+                      : totalInterstitialSteps > 0
+                        ? `Nhấn vào ảnh để xem quảng cáo (Bước ${currentInterstitialStep + 1}/${totalInterstitialSteps})`
+                        : "Nhấn vào ảnh để mở khóa"}
                 </div>
-
               </div>
 
               <button

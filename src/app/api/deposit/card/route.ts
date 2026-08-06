@@ -16,7 +16,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
 
-    const { telco, declaredValue, code, serial } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { telco, code, serial } = body;
+    const declaredValue = body.declaredValue ?? body.amount;
 
     if (!telco || !declaredValue || !code || !serial) {
       return NextResponse.json({ error: "Vui lòng nhập đầy đủ thông tin thẻ" }, { status: 400 });
@@ -137,16 +139,17 @@ export async function POST(req: NextRequest) {
 
     // Cập nhật thông báo từ cổng gạch thẻ
     if (gatewayRes.status === 2 || gatewayRes.status === 3 || gatewayRes.status === 4) {
+      const safeMsg = String(gatewayRes.message || "Nạp thẻ thất bại").slice(0, 190);
       await prisma.deposit.update({
         where: { id: deposit.id },
         data: {
           status: "FAILED",
-          cardMessage: gatewayRes.message,
+          cardMessage: safeMsg,
         },
       });
 
       return NextResponse.json(
-        { error: `Nạp thẻ thất bại: ${gatewayRes.message}` },
+        { error: `Nạp thẻ thất bại: ${safeMsg}` },
         { status: 400 }
       );
     }

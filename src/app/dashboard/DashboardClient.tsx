@@ -225,7 +225,13 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
       const res = await fetch("/api/deposit/card", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ telco: cardTelco, amount: parseInt(cardAmount), serial: cardSerial, code: cardCode }),
+        body: JSON.stringify({
+          telco: cardTelco,
+          declaredValue: parseInt(cardAmount),
+          amount: parseInt(cardAmount),
+          serial: cardSerial.trim(),
+          code: cardCode.trim(),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -854,7 +860,7 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
 
       {/* ===== NAVBAR ===== */}
       <nav className="db-navbar">
-        <a href="/dashboard" className="db-brand">Sub2S</a>
+        <a href="/dashboard" className="db-brand">API Key</a>
         <div className="db-nav-right">
           <span
             className="balance-badge"
@@ -871,6 +877,9 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
               <i className="bi bi-gear-fill" /> <span className="nav-label">Admin</span>
             </a>
           )}
+          <a href="/change-password" className="btn-nav btn-nav-secondary" title="Đổi mật khẩu">
+            <i className="bi bi-key-fill" /> <span className="nav-label">Đổi MK</span>
+          </a>
           <button className="btn-nav btn-nav-danger" onClick={handleLogout}>
             <i className="bi bi-box-arrow-right" /> <span className="nav-label">Đăng xuất</span>
           </button>

@@ -6,7 +6,7 @@ import { formatVND } from "@/lib/sepay";
 import { Wallet, CreditCard, Building2, Clock, ChevronRight, Phone } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Nạp tiền - Sub2S" };
+export const metadata: Metadata = { title: "Nạp tiền - API Key" };
 
 export default async function DepositPage() {
   const session = await auth();

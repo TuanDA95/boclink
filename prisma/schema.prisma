@@ -88,7 +88,7 @@ model Deposit {
   declaredValue  Float?        // Mệnh giá khai báo (10k, 20k, 50k, 100k, 200k, 500k...)
   realValue      Float?        // Mệnh giá thực tế nhận được sau chiết khấu
   cardRequestId  String?       @unique // Mã giao dịch gửi cổng gạch thẻ (requestId)
-  cardMessage    String?       // Ghi chú / Thông báo từ cổng gạch thẻ
+  cardMessage    String?       @db.Text // Ghi chú / Thông báo từ cổng gạch thẻ
 
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())

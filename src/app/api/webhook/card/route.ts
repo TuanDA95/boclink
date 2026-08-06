@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           data: {
             status: "SUCCESS",
             realValue: creditAmount,
-            cardMessage: callbackMessage || "Nạp thẻ cào thành công",
+            cardMessage: String(callbackMessage || "Nạp thẻ cào thành công").slice(0, 190),
             confirmedAt: new Date(),
           },
         }),
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         where: { id: deposit.id },
         data: {
           status: "FAILED",
-          cardMessage: callbackMessage || (status === 2 ? "Sai mệnh giá thẻ" : "Mã thẻ cào hoặc Seri không hợp lệ"),
+          cardMessage: String(callbackMessage || (status === 2 ? "Sai mệnh giá thẻ" : "Mã thẻ cào hoặc Seri không hợp lệ")).slice(0, 190),
         },
       });
 

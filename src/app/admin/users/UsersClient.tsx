@@ -25,6 +25,7 @@ export default function UsersClient({ initialUsers, total }: Props) {
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustType, setAdjustType] = useState<"ADD" | "SUBTRACT">("ADD");
   const [newRole, setNewRole] = useState<"ADMIN" | "USER">("USER");
+  const [newPassword, setNewPassword] = useState("");
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -39,6 +40,7 @@ export default function UsersClient({ initialUsers, total }: Props) {
     setAdjustAmount("");
     setAdjustType("ADD");
     setNewRole(user.role);
+    setNewPassword("");
     setMessage("");
   };
 
@@ -57,6 +59,25 @@ export default function UsersClient({ initialUsers, total }: Props) {
           return;
         }
         finalBalance = adjustType === "ADD" ? selectedUser.balance + val : Math.max(0, selectedUser.balance - val);
+      }
+
+      if (newPassword.trim()) {
+        if (newPassword.trim().length < 6) {
+          setMessage("Mật khẩu mới phải có tối thiểu 6 ký tự");
+          setUpdating(false);
+          return;
+        }
+        const pwRes = await fetch("/api/admin/users/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: selectedUser.id, newPassword: newPassword.trim() }),
+        });
+        if (!pwRes.ok) {
+          const pwData = await pwRes.json();
+          setMessage(pwData.error || "Lỗi đặt lại mật khẩu");
+          setUpdating(false);
+          return;
+        }
       }
 
       const res = await fetch("/api/admin/users", {
@@ -238,6 +259,21 @@ export default function UsersClient({ initialUsers, total }: Props) {
                 <option value="USER">USER (Thành viên thường)</option>
                 <option value="ADMIN">ADMIN (Quản trị viên)</option>
               </select>
+            </div>
+
+            {/* Reset Password Input */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: 12, color: "#94a3b8", marginBottom: 6, fontWeight: 500 }}>
+                Đặt lại Mật khẩu mới (Để trống nếu giữ nguyên)
+              </label>
+              <input
+                className="input"
+                type="password"
+                placeholder="Nhập mật khẩu mới cho thành viên..."
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                style={{ height: 40, fontSize: 14, background: "#11131f", border: "1px solid rgba(255,255,255,0.08)" }}
+              />
             </div>
 
             {message && (

@@ -7,10 +7,15 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Sub2S",
-    default: "Sub2S - Nền tảng rút gọn và bọc link",
+    template: "%s | API Key",
+    default: "API Key - Nền tảng rút gọn và bọc link",
   },
   description: "Truy cập link gốc qua quảng cáo hoặc mua với giá ưu đãi",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,6 +26,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className={inter.variable}>
       <head>
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
