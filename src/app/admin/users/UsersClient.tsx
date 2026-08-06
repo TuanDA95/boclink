@@ -29,11 +29,22 @@ export default function UsersClient({ initialUsers, total }: Props) {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setCurrentPage(1);
+  };
+
   const filteredUsers = users.filter(
     (u) =>
       (u.email?.toLowerCase() ?? "").includes(search.toLowerCase()) ||
       (u.name?.toLowerCase() ?? "").includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const openAdjustModal = (user: UserItem) => {
     setSelectedUser(user);
@@ -119,7 +130,7 @@ export default function UsersClient({ initialUsers, total }: Props) {
             style={{ paddingLeft: 36, height: 38, fontSize: 13, background: "#11131f", border: "1px solid rgba(255,255,255,0.08)" }}
             placeholder="Tìm theo email / tên..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
       </div>
@@ -137,7 +148,7 @@ export default function UsersClient({ initialUsers, total }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
+            {paginatedUsers.map((user) => (
               <tr key={user.id} className="table-row">
                 <td style={{ padding: "13px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -185,6 +196,76 @@ export default function UsersClient({ initialUsers, total }: Props) {
         {filteredUsers.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px 20px", color: "#475569" }}>
             Không tìm thấy thành viên nào
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {filteredUsers.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ fontSize: 13, color: "#64748b" }}>
+              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(currentPage - 1) * pageSize + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(currentPage * pageSize, filteredUsers.length)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{filteredUsers.length}</strong> thành viên
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(1)}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: currentPage === 1 ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: currentPage === 1 ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  « Đầu
+                </button>
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: currentPage === 1 ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: currentPage === 1 ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  ‹ Trước
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                  .map((p, idx, arr) => {
+                    const prev = arr[idx - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    return (
+                      <span key={p} style={{ display: "inline-flex", alignItems: "center" }}>
+                        {showEllipsis && <span style={{ color: "#64748b", padding: "0 4px", fontSize: 12 }}>...</span>}
+                        <button
+                          onClick={() => setCurrentPage(p)}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: p === currentPage ? 700 : 500,
+                            background: p === currentPage ? "#4f46e5" : "rgba(255,255,255,0.05)",
+                            color: p === currentPage ? "#ffffff" : "#e2e8f0",
+                            border: p === currentPage ? "1px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {p}
+                        </button>
+                      </span>
+                    );
+                  })}
+
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: currentPage === totalPages ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: currentPage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  Sau ›
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: currentPage === totalPages ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: currentPage === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  Cuối »
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
