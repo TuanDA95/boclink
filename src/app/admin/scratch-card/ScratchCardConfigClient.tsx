@@ -32,7 +32,7 @@ export default function ScratchCardConfigClient({ initialSettings, webhookUrl }:
   const [form, setForm] = useState({
     CARD_PARTNER_ID: initialSettings.CARD_PARTNER_ID || "",
     CARD_PARTNER_KEY: initialSettings.CARD_PARTNER_KEY || "",
-    CARD_API_URL: initialSettings.CARD_API_URL || "https://doithe1s.vn/api/charging-ws/v2",
+    CARD_API_URL: initialSettings.CARD_API_URL || "https://doithe1s.vn/chargingws/v2",
     CARD_SANDBOX: initialSettings.CARD_SANDBOX || "true",
     CARD_DISCOUNT_VIETTEL: initialSettings.CARD_DISCOUNT_VIETTEL || "15",
     CARD_DISCOUNT_VINAPHONE: initialSettings.CARD_DISCOUNT_VINAPHONE || "15",
@@ -132,14 +132,14 @@ export default function ScratchCardConfigClient({ initialSettings, webhookUrl }:
             <input
               className="input"
               style={{ height: 42, background: "#11131f", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "monospace" }}
-              placeholder="https://doithe1s.vn/api/charging-ws/v2"
+              placeholder="https://doithe1s.vn/chargingws/v2"
               value={form.CARD_API_URL}
               onChange={(e) => setForm({ ...form, CARD_API_URL: e.target.value })}
               required
             />
-            <span style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "block" }}>
-              Mặc định: <code>https://doithe1s.vn/api/charging-ws/v2</code> hoặc đường dẫn API của bên gạch thẻ bạn đăng ký.
-            </span>
+            <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              Mặc định: <code>https://doithe1s.vn/chargingws/v2</code> hoặc đường dẫn API của bên gạch thẻ bạn đăng ký.
+            </p>
           </div>
 
           {/* Webhook Callback URL */}

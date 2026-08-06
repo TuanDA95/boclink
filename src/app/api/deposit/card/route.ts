@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
     // Đọc thông tin kết nối cổng gạch thẻ từ DB settings
     const partnerId = await getSetting("CARD_PARTNER_ID", process.env.CARD_PARTNER_ID || "");
     const partnerKey = await getSetting("CARD_PARTNER_KEY", process.env.CARD_PARTNER_KEY || "");
-    const apiUrl = await getSetting("CARD_API_URL", process.env.CARD_API_URL || "https://doithe1s.vn/api/charging-ws/v2");
+    let apiUrl = await getSetting("CARD_API_URL", process.env.CARD_API_URL || "https://doithe1s.vn/chargingws/v2");
+    if (!apiUrl || apiUrl.includes("/api/charging-ws/v2") || apiUrl.includes("charging-ws")) {
+      apiUrl = apiUrl.replace("/api/charging-ws/v2", "/chargingws/v2").replace("charging-ws", "chargingws");
+    }
     const isSandbox = (await getSetting("CARD_SANDBOX", "true")) === "true";
 
     // Tạo bản ghi Deposit trong cơ sở dữ liệu

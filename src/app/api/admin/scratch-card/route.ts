@@ -60,7 +60,7 @@ function getDefaultValue(key: string): string {
     case "CARD_PARTNER_KEY":
       return process.env.CARD_PARTNER_KEY || "";
     case "CARD_API_URL":
-      return process.env.CARD_API_URL || "https://doithe1s.vn/api/charging-ws/v2";
+      return process.env.CARD_API_URL || "https://doithe1s.vn/chargingws/v2";
     case "CARD_SANDBOX":
       return process.env.CARD_SANDBOX || "true";
     case "CARD_DISCOUNT_VIETTEL":
