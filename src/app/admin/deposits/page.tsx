@@ -15,7 +15,7 @@ export default async function AdminDepositsPage() {
   const [deposits, stats] = await Promise.all([
     prisma.deposit.findMany({
       orderBy: { createdAt: "desc" },
-      take: 100,
+      take: 2000,
       include: { user: { select: { name: true, email: true } } },
     }),
     prisma.deposit.groupBy({
