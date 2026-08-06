@@ -123,7 +123,7 @@ if ($response === false) {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: "20",
+        limit: "15",
         ...(search ? { search } : {}),
       });
       const res = await fetch(`/api/admin/links?${params}`);
@@ -408,30 +408,76 @@ if ($response === false) {
             Chưa có link nào
           </div>
         )}
-      </div>
+        {/* Pagination Controls */}
+        {links.length > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ fontSize: 13, color: "#64748b" }}>
+              Hiển thị <strong style={{ color: "#e2e8f0" }}>{(page - 1) * 15 + 1}</strong> - <strong style={{ color: "#e2e8f0" }}>{Math.min(page * 15, totalLinks)}</strong> trong <strong style={{ color: "#e2e8f0" }}>{totalLinks}</strong> links
+            </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 20 }}>
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            style={{ padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", borderRadius: 6, cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1 }}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span style={{ padding: "8px 16px", fontSize: 13, color: "#94a3b8" }}>
-            {page} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            style={{ padding: "8px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8", borderRadius: 6, cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1 }}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage(1)}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page === 1 ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  « Đầu
+                </button>
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page === 1 ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: page === 1 ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  ‹ Trước
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                  .map((p, idx, arr) => {
+                    const prev = arr[idx - 1];
+                    const showEllipsis = prev && p - prev > 1;
+                    return (
+                      <span key={p} style={{ display: "inline-flex", alignItems: "center" }}>
+                        {showEllipsis && <span style={{ color: "#64748b", padding: "0 4px", fontSize: 12 }}>...</span>}
+                        <button
+                          onClick={() => setPage(p)}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: p === page ? 700 : 500,
+                            background: p === page ? "#4f46e5" : "rgba(255,255,255,0.05)",
+                            color: p === page ? "#ffffff" : "#e2e8f0",
+                            border: p === page ? "1px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {p}
+                        </button>
+                      </span>
+                    );
+                  })}
+
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page === totalPages ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: page === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  Sau ›
+                </button>
+                <button
+                  disabled={page === totalPages}
+                  onClick={() => setPage(totalPages)}
+                  style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: page === totalPages ? "#475569" : "#e2e8f0", borderRadius: 6, cursor: page === totalPages ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 500 }}
+                >
+                  Cuối »
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

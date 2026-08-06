@@ -18,7 +18,7 @@ export default async function AdminLinksPage() {
   const [links, total, user] = await Promise.all([
     prisma.link.findMany({
       orderBy: { createdAt: "desc" },
-      take: 20,
+      take: 15,
       include: {
         _count: { select: { purchases: true } },
         user: { select: { name: true, email: true } },

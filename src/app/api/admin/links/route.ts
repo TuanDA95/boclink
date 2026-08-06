@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
-  const search = searchParams.get("search") || "";
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.max(1, parseInt(searchParams.get("limit") || "15"));
+  const search = (searchParams.get("search") || "").trim();
 
   const where = search
     ? {
@@ -22,6 +22,8 @@ export async function GET(req: NextRequest) {
           { title: { contains: search } },
           { slug: { contains: search } },
           { originalUrl: { contains: search } },
+          { user: { email: { contains: search } } },
+          { user: { name: { contains: search } } },
         ],
       }
     : {};
@@ -40,7 +42,9 @@ export async function GET(req: NextRequest) {
     prisma.link.count({ where }),
   ]);
 
-  return NextResponse.json({ links, total, page, limit });
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return NextResponse.json({ links, total, totalPages, page, limit });
 }
 
 // POST create link (admin)
