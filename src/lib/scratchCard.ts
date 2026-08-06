@@ -19,7 +19,7 @@ export const TELCOS: ScratchCardTelco[] = [
 ];
 
 export const DECLARED_VALUES = [
-  10000, 20000, 50000, 100000, 200000, 500000, 1000000,
+  20000, 50000, 100000, 200000, 500000, 1000000,
 ];
 
 export interface ScratchCardSubmitPayload {

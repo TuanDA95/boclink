@@ -79,7 +79,7 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
   const [localBalance, setLocalBalance] = useState(user.balance);
 
   const [cardTelco, setCardTelco] = useState("VIETTEL");
-  const [cardAmount, setCardAmount] = useState("10000");
+  const [cardAmount, setCardAmount] = useState("20000");
   const [cardSerial, setCardSerial] = useState("");
   const [cardCode, setCardCode] = useState("");
   const [cardLoading, setCardLoading] = useState(false);
@@ -983,7 +983,7 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
                     <div className="form-mb">
                       <label className="db-label">Mệnh giá thẻ</label>
                       <select className="db-select" value={cardAmount} onChange={(e) => setCardAmount(e.target.value)}>
-                        {["10000","20000","50000","100000","200000","500000"].map(v => (
+                        {["20000","50000","100000","200000","500000","1000000"].map(v => (
                           <option key={v} value={v}>{Number(v).toLocaleString("vi-VN")}đ</option>
                         ))}
                       </select>
