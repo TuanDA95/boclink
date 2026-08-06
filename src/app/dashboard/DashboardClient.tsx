@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
+import { TELCOS } from "@/lib/scratchCard";
 
 declare const Swal: any;
 
@@ -973,11 +974,9 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
                     <div className="form-mb">
                       <label className="db-label">Nhà mạng</label>
                       <select className="db-select" value={cardTelco} onChange={(e) => setCardTelco(e.target.value)}>
-                        <option value="VIETTEL">Viettel</option>
-                        <option value="VINAPHONE">Vinaphone</option>
-                        <option value="MOBIFONE">Mobifone</option>
-                        <option value="VIETNAMOBILE">Vietnamobile</option>
-                        <option value="GMOBILE">Gmobile</option>
+                        {TELCOS.map((t) => (
+                          <option key={t.code} value={t.code}>{t.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="form-mb">

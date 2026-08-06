@@ -12,6 +12,8 @@ export const TELCOS: ScratchCardTelco[] = [
   { code: "VIETTEL", name: "Viettel", type: "phone", defaultDiscount: 15 },
   { code: "VINAPHONE", name: "Vinaphone", type: "phone", defaultDiscount: 15 },
   { code: "MOBIFONE", name: "Mobifone", type: "phone", defaultDiscount: 15 },
+  { code: "VIETNAMOBILE", name: "Vietnamobile", type: "phone", defaultDiscount: 15 },
+  { code: "GMOBILE", name: "Gmobile", type: "phone", defaultDiscount: 15 },
   { code: "ZING", name: "Thẻ Zing", type: "game", defaultDiscount: 16 },
   { code: "GATE", name: "Thẻ Gate", type: "game", defaultDiscount: 16 },
   { code: "GARENA", name: "Thẻ Garena", type: "game", defaultDiscount: 18 },
