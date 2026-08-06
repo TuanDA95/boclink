@@ -12,12 +12,13 @@ export default async function AdminSettingsPage() {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/");
 
-  const [freeLinkRaw, defaultPriceRaw, adLayersRaw, interstitialAdLayersRaw, interstitialAdUrl] = await Promise.all([
+  const [freeLinkRaw, defaultPriceRaw, adLayersRaw, interstitialAdLayersRaw, interstitialAdUrl, chatLinkUrl] = await Promise.all([
     getSetting("FREE_LINK_ENABLED", "true"),
     getSetting("DEFAULT_LINK_PRICE", "5000"),
     getSetting("AD_LAYERS", "[]"),
     getSetting("INTERSTITIAL_AD_LAYERS", "[]"),
     getSetting("INTERSTITIAL_AD_URL", ""),
+    getSetting("CHAT_LINK_URL", ""),
   ]);
 
   let adLayers: AdLayer[] = [];
@@ -46,6 +47,7 @@ export default async function AdminSettingsPage() {
       initialDefaultPrice={parseFloat(defaultPriceRaw) || 5000}
       initialAdLayers={adLayers}
       initialInterstitialAdLayers={interstitialAdLayers}
+      initialChatLinkUrl={chatLinkUrl}
     />
   );
 }

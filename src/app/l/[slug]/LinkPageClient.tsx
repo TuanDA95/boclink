@@ -66,7 +66,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
   useEffect(() => {
     const timer = setTimeout(() => {
       setScreen("main");
-    }, 1800);
+    }, 0);
     return () => clearTimeout(timer);
   }, []);
 

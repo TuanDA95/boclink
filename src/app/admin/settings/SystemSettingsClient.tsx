@@ -30,6 +30,7 @@ interface Props {
   initialDefaultPrice: number;
   initialAdLayers: AdLayer[];
   initialInterstitialAdLayers: AdLayer[];
+  initialChatLinkUrl?: string;
 }
 
 function genId() {
@@ -53,10 +54,12 @@ export default function SystemSettingsClient({
   initialDefaultPrice,
   initialAdLayers,
   initialInterstitialAdLayers,
+  initialChatLinkUrl = "",
 }: Props) {
   const router = useRouter();
   const [freeEnabled,          setFreeEnabled]          = useState(initialFreeEnabled);
   const [defaultPrice,         setDefaultPrice]         = useState(initialDefaultPrice.toString());
+  const [chatLinkUrl,          setChatLinkUrl]          = useState(initialChatLinkUrl);
   const [adLayers,             setAdLayers]             = useState<AdLayer[]>(initialAdLayers);
   const [interstitialAdLayers, setInterstitialAdLayers] = useState<AdLayer[]>(initialInterstitialAdLayers);
 
@@ -91,6 +94,7 @@ export default function SystemSettingsClient({
         body: JSON.stringify({
           FREE_LINK_ENABLED: freeEnabled ? "true" : "false",
           DEFAULT_LINK_PRICE: defaultPrice,
+          CHAT_LINK_URL: chatLinkUrl,
           AD_LAYERS: JSON.stringify(adLayers),
           INTERSTITIAL_AD_LAYERS: JSON.stringify(interstitialAdLayers),
           INTERSTITIAL_AD_URL: firstInterstitialUrl,
@@ -379,6 +383,22 @@ export default function SystemSettingsClient({
               <span className="price-unit">đồng</span>
             </div>
             <span className="price-hint">Gợi ý khi tạo link mới</span>
+          </div>
+
+          {/* Chat Link URL */}
+          <div className="price-row" style={{ flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+            <span className="price-label">💬 Link Chat Hỗ Trợ (Zalo / Telegram / Fanpage...)</span>
+            <div style={{ width: "100%", position: "relative" }}>
+              <input
+                type="url"
+                className="url-input"
+                style={{ width: "100%", padding: "10px 14px" }}
+                value={chatLinkUrl}
+                placeholder="Ví dụ: https://zalo.me/... hoặc https://t.me/..."
+                onChange={(e) => setChatLinkUrl(e.target.value)}
+              />
+            </div>
+            <span className="price-hint">Đường dẫn khi người dùng nhấn vào biểu tượng Chat nổi bên ngoài trang. Để trống để ẩn biểu tượng.</span>
           </div>
         </div>
         <div className="sc-card-ft">

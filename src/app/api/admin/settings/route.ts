@@ -8,6 +8,7 @@ export const CORE_SETTING_KEYS = [
   "DEFAULT_LINK_PRICE",       // số đồng, VD "5000"
   "AD_LAYERS",                // JSON string của AdLayer[] (Bọc link)
   "INTERSTITIAL_AD_LAYERS",   // JSON string của AdLayer[] (Quảng cáo hình ảnh)
+  "CHAT_LINK_URL",            // URL link chat hỗ trợ (Zalo, Telegram, Fanpage...)
 ] as const;
 
 export const CORE_SETTING_DEFAULTS: Record<string, string> = {
@@ -15,6 +16,7 @@ export const CORE_SETTING_DEFAULTS: Record<string, string> = {
   DEFAULT_LINK_PRICE: "5000",
   AD_LAYERS: "[]",
   INTERSTITIAL_AD_LAYERS: "[]",
+  CHAT_LINK_URL: "",
 };
 
 // GET all core settings
