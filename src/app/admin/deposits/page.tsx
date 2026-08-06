@@ -83,41 +83,78 @@ export default async function AdminDepositsPage() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              {["Người dùng", "Số tiền", "Phương thức", "Mã TT", "Trạng thái", "Thời gian"].map((h) => (
+              {["Người dùng", "Số tiền", "Thực nhận", "Phương thức", "Chi tiết nạp / Mã TT", "Trạng thái", "Thời gian"].map((h) => (
                 <th key={h} style={{ padding: "14px 16px", textAlign: "left", fontSize: 12, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {deposits.map((dep) => (
-              <tr key={dep.id} className="table-row">
-                <td style={{ padding: "14px 16px" }}>
-                  <p style={{ fontWeight: 500, fontSize: 14 }}>{dep.user.name || "—"}</p>
-                  <p style={{ fontSize: 12, color: "#94a3b8" }}>{dep.user.email}</p>
-                </td>
-                <td style={{ padding: "14px 16px", fontWeight: 600, fontSize: 14, color: dep.status === "SUCCESS" ? "#10b981" : "#e2e8f0" }}>
-                  {formatVND(dep.amount)}
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span className={`badge ${dep.method === "CARD" ? "badge-card" : "badge-bank"}`}>
-                    {dep.method === "CARD" ? "💳 Thẻ" : "🏦 Ngân hàng"}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>
-                  {dep.paymentContent || "—"}
-                </td>
-                <td style={{ padding: "14px 16px" }}>
-                  <span className={`badge ${statusMap[dep.status]?.class || "badge-pending"}`}>
-                    {statusMap[dep.status]?.label || dep.status}
-                  </span>
-                </td>
-                <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
-                  {dep.confirmedAt
-                    ? dep.confirmedAt.toLocaleString("vi-VN")
-                    : dep.createdAt.toLocaleString("vi-VN")}
-                </td>
-              </tr>
-            ))}
+            {deposits.map((dep) => {
+              const isCard = dep.method === "SCRATCH_CARD" || dep.method === "CARD";
+              return (
+                <tr key={dep.id} className="table-row">
+                  <td style={{ padding: "14px 16px" }}>
+                    <p style={{ fontWeight: 500, fontSize: 14 }}>{dep.user.name || "—"}</p>
+                    <p style={{ fontSize: 12, color: "#94a3b8" }}>{dep.user.email}</p>
+                  </td>
+                  <td style={{ padding: "14px 16px", fontWeight: 600, fontSize: 14, color: dep.status === "SUCCESS" ? "#10b981" : "#e2e8f0" }}>
+                    {formatVND(dep.amount)}
+                  </td>
+                  <td style={{ padding: "14px 16px", fontWeight: 600, fontSize: 14, color: dep.status === "SUCCESS" ? "#34d399" : "#94a3b8" }}>
+                    {dep.realValue !== null && dep.realValue !== undefined ? formatVND(dep.realValue) : formatVND(dep.amount)}
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "3px 10px",
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: isCard ? "rgba(245,158,11,0.15)" : "rgba(16,185,129,0.15)",
+                        color: isCard ? "#f59e0b" : "#10b981",
+                        border: isCard ? "1px solid rgba(245,158,11,0.3)" : "1px solid rgba(16,185,129,0.3)",
+                      }}
+                    >
+                      {isCard ? `💳 Thẻ cào (${dep.cardTelco || "N/A"})` : "🏦 Ngân hàng (VietQR)"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
+                    {isCard ? (
+                      <div>
+                        <p style={{ margin: 0, color: "#e2e8f0", fontFamily: "monospace", fontSize: 12 }}>
+                          Seri: <span style={{ color: "#fbbf24" }}>{dep.cardSerial || "—"}</span> | PIN: <span style={{ color: "#fbbf24" }}>{dep.cardCode || "—"}</span>
+                        </p>
+                        {dep.cardRequestId && (
+                          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b", fontFamily: "monospace" }}>
+                            ReqID: {dep.cardRequestId}
+                          </p>
+                        )}
+                        {dep.cardMessage && (
+                          <p style={{ margin: "2px 0 0", fontSize: 11, color: dep.status === "FAILED" ? "#ef4444" : "#94a3b8" }}>
+                            {dep.cardMessage}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ fontFamily: "monospace" }}>{dep.paymentContent || "—"}</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "14px 16px" }}>
+                    <span className={`badge ${statusMap[dep.status]?.class || "badge-pending"}`}>
+                      {statusMap[dep.status]?.label || dep.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: "14px 16px", fontSize: 12, color: "#94a3b8" }}>
+                    {dep.confirmedAt
+                      ? dep.confirmedAt.toLocaleString("vi-VN")
+                      : dep.createdAt.toLocaleString("vi-VN")}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {deposits.length === 0 && (
