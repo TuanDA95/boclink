@@ -20,7 +20,7 @@ export default async function AdminPurchasesPage() {
       link: { select: { id: true, slug: true, title: true, originalUrl: true } },
     },
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: 2000,
   });
 
   return <PurchasesClient initialPurchases={JSON.parse(JSON.stringify(purchases))} />;
