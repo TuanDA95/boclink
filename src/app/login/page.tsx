@@ -45,7 +45,7 @@ function LoginForm() {
           margin: 0 !important;
           padding: 0 !important;
           font-family: 'Lexend', sans-serif !important;
-          background: linear-gradient(135deg, #fffdf5 0%, #fef9c3 50%, #fef08a 100%) !important;
+          background: linear-gradient(135deg, #ffffff 0%, #fffdf0 50%, #fefce8 100%) !important;
           overflow: hidden;
           height: 100dvh;
           display: flex !important;
@@ -57,7 +57,7 @@ function LoginForm() {
           position: fixed;
           top: 0; left: 0; width: 100%; height: 100%;
           z-index: 1;
-          background: radial-gradient(circle at top right, rgba(253, 224, 71, 0.3), transparent 60%), radial-gradient(circle at bottom left, rgba(245, 158, 11, 0.15), transparent 60%);
+          background: radial-gradient(circle at top right, rgba(254, 240, 138, 0.25), transparent 70%), radial-gradient(circle at bottom left, rgba(253, 230, 138, 0.15), transparent 70%);
         }
 
         .bg-overlay {
@@ -68,12 +68,12 @@ function LoginForm() {
           position: relative;
           z-index: 10;
           background: #ffffff;
-          border: 1.5px solid #fde047;
+          border: 1px solid #fef08a;
           border-radius: 28px;
           padding: 32px 28px;
           width: 88%;
           max-width: 360px;
-          box-shadow: 0 20px 45px rgba(202, 138, 4, 0.15), 0 4px 15px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 16px 40px rgba(234, 179, 8, 0.08), 0 4px 15px rgba(0, 0, 0, 0.03);
         }
 
         .auth-title {
@@ -90,28 +90,28 @@ function LoginForm() {
           display: block;
           font-size: 0.8rem;
           font-weight: 700;
-          color: #78350f;
+          color: #475569;
           margin-bottom: 6px;
           margin-left: 2px;
         }
 
         .auth-input {
           width: 100%;
-          background: #fffdf5;
-          border: 1.5px solid #fde68a;
+          background: #fffdf7;
+          border: 1.5px solid #fef08a;
           padding: 12px 15px;
           font-size: 16px !important;
           border-radius: 14px;
           outline: none;
           font-family: 'Lexend', sans-serif;
           box-sizing: border-box;
-          color: #451a03;
+          color: #1e293b;
           transition: border-color 0.2s, box-shadow 0.2s;
           -webkit-appearance: none;
         }
         .auth-input:focus {
-          border-color: #d97706;
-          box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.14);
+          border-color: #f59e0b;
+          box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
         }
 
         .auth-input-wrap {
@@ -125,14 +125,14 @@ function LoginForm() {
           background: none;
           border: none;
           cursor: pointer;
-          color: #b45309;
+          color: #94a3b8;
           font-size: 1rem;
           padding: 0;
           line-height: 1;
         }
 
         .btn-gaming {
-          background: linear-gradient(135deg, #f59e0b, #d97706);
+          background: linear-gradient(135deg, #fbbf24, #d97706);
           border: none;
           font-weight: 700;
           padding: 14px;
@@ -145,7 +145,7 @@ function LoginForm() {
           letter-spacing: 1px;
           text-transform: uppercase;
           font-family: 'Lexend', sans-serif;
-          box-shadow: 0 6px 18px rgba(217, 119, 6, 0.35);
+          box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25);
           transition: all 0.2s ease;
           display: flex;
           align-items: center;
@@ -153,8 +153,8 @@ function LoginForm() {
           gap: 8px;
         }
         .btn-gaming:hover {
-          background: linear-gradient(135deg, #fbbf24, #b45309);
-          box-shadow: 0 8px 22px rgba(217, 119, 6, 0.45);
+          background: linear-gradient(135deg, #f59e0b, #b45309);
+          box-shadow: 0 6px 18px rgba(217, 119, 6, 0.35);
         }
         .btn-gaming:active { transform: scale(0.97); opacity: 0.9; }
         .btn-gaming:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -174,7 +174,7 @@ function LoginForm() {
           text-align: center;
           margin-top: 18px;
           font-size: 0.85rem;
-          color: #78350f;
+          color: #64748b;
         }
         .auth-footer a {
           color: #d97706;
