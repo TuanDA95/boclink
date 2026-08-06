@@ -46,7 +46,7 @@ export function calculateRealAmount(declaredValue: number, discountPercent: numb
 }
 
 /**
- * Gửi thẻ cào lên cổng gạch thẻ (Doithe1s / Doithegiare / CardVIP standard API)
+ * Gửi thẻ cào lên cổng gạch thẻ (Doithe1s / Pay1s / CardVIP standard API)
  */
 export async function submitScratchCardToGateway(
   payload: ScratchCardSubmitPayload,
@@ -58,6 +58,24 @@ export async function submitScratchCardToGateway(
     .createHash("md5")
     .update(partnerKey + payload.code + payload.serial)
     .digest("hex");
+
+  let url = apiUrl || "https://pay1s.com/chargingws/v2";
+
+  // Tạo Query string chứa thông số giống hệ thống cũ LinkBuy.php
+  const queryParams = new URLSearchParams({
+    sign,
+    telco: payload.telco,
+    code: payload.code,
+    serial: payload.serial,
+    amount: String(payload.declaredValue),
+    request_id: payload.requestId,
+    partner_id: partnerId,
+    command: "charging",
+  });
+
+  const fullUrl = url.includes("?")
+    ? `${url}&${queryParams.toString()}`
+    : `${url}?${queryParams.toString()}`;
 
   const body = {
     partner_id: partnerId,
@@ -71,7 +89,7 @@ export async function submitScratchCardToGateway(
   };
 
   try {
-    const res = await fetch(apiUrl, {
+    const res = await fetch(fullUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -87,9 +105,10 @@ export async function submitScratchCardToGateway(
     }
 
     const data = await res.json();
+    const status = Number(data.status ?? 99);
     return {
-      status: Number(data.status ?? 99),
-      message: data.message || data.msg || "Đã gửi thẻ cào lên hệ thống xử lý",
+      status,
+      message: data.message || data.msg || (status === 99 || status === 1 ? "Đã gửi thẻ cào, vui lòng đợi duyệt!" : "Thẻ cào không hợp lệ"),
       requestId: payload.requestId,
       amount: data.amount ? Number(data.amount) : undefined,
     };
