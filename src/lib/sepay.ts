@@ -207,12 +207,16 @@ export function verifySePayWebhook(
 
 /**
  * Tạo mã thanh toán duy nhất cho bank transfer
+ * @param userId - ID người dùng
+ * @param prefix - Tiền tố nội dung chuyển khoản (lấy từ DB qua getSetting)
  */
-export function generatePaymentCode(userId: string): string {
-  const prefix = process.env.SEPAY_PAYMENT_PREFIX || "SUB2S";
-  const shortId = userId.slice(-6).toUpperCase();
+export function generatePaymentCode(userId: string, prefix?: string): string {
+  const resolvedPrefix = prefix || process.env.SEPAY_PAYMENT_PREFIX || "SUB2S";
+  // Loại bỏ tất cả ký tự không phải alphanumeric (đặc biệt dấu _ trong userId cũ c_XXXX)
+  const cleanId = userId.replace(/[^a-zA-Z0-9]/g, "");
+  const shortId = cleanId.slice(-8).toUpperCase();
   const time = Date.now().toString().slice(-5);
-  return `${prefix}${shortId}${time}`;
+  return `${resolvedPrefix}${shortId}${time}`;
 }
 
 /**

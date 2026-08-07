@@ -40,11 +40,8 @@ export async function POST(req: NextRequest) {
   const bankOwner = await getSetting("SEPAY_BANK_OWNER", "NGUYEN VAN A");
   const prefix = await getSetting("SEPAY_PAYMENT_PREFIX", "SUB2S");
 
-  // Tạo mã thanh toán duy nhất
-  const paymentContent = generatePaymentCode(session.user.id);
-  const finalContent = paymentContent.startsWith(prefix)
-    ? paymentContent
-    : `${prefix}${paymentContent}`;
+  // Tạo mã thanh toán duy nhất, truyền prefix từ DB vào hàm
+  const finalContent = generatePaymentCode(session.user.id, prefix);
 
   const bankBin = getBankBin(bankName);
   const qrCodeUrl = generateVietQRUrl(bankAccount, bankBin, amount, finalContent, bankOwner);

@@ -63,6 +63,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (!deposit) {
+      // Fallback: tìm kiếm LIKE với mã thanh toán (hỗ trợ userId cũ có dấu _ trong mã)
+      deposit = await prisma.deposit.findFirst({
+        where: {
+          paymentContent: { contains: paymentCode },
+          status: "PENDING",
+        },
+        include: { user: true },
+      });
+    }
+
+    if (!deposit) {
       console.log(`[SePay Webhook] Không tìm thấy đơn nạp PENDING với mã: ${paymentCode}`);
       return NextResponse.json({ success: true });
     }
@@ -101,7 +112,8 @@ export async function POST(req: NextRequest) {
 }
 
 function extractCodeFromContent(content: string, prefix: string): string | null {
-  const regex = new RegExp(`(${prefix}[A-Z0-9]+)`, "i");
+  // Regex mở rộng: chấp nhận cả dấu _ và - trong mã (backward compat với userId cũ dạng c_XXXX)
+  const regex = new RegExp(`(${prefix}[A-Z0-9_-]+)`, "i");
   const match = content.match(regex);
   return match ? match[1].toUpperCase() : null;
 }
