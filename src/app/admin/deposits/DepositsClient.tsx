@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { formatVND } from "@/lib/sepay";
-import { Wallet, CheckCircle, Clock, XCircle, Check, Search, Filter } from "lucide-react";
+import { Wallet, CheckCircle, Clock, XCircle, Check, Search, Filter, Trash2 } from "lucide-react";
 
 declare const Swal: any;
 
@@ -158,6 +158,63 @@ export default function DepositsClient({ initialDeposits, total, stats }: Props)
       } else {
         if (typeof Swal !== "undefined") {
           Swal.fire({ icon: "error", title: "Lỗi", text: data.error || "Duyệt đơn nạp thất bại", background: "#16161a", color: "#fff" });
+        }
+      }
+    } catch {
+      if (typeof Swal !== "undefined") {
+        Swal.fire({ icon: "error", title: "Lỗi", text: "Lỗi kết nối máy chủ", background: "#16161a", color: "#fff" });
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleDelete = async (dep: DepositItem) => {
+    const userName = dep.user.name || dep.user.email;
+
+    if (typeof Swal !== "undefined") {
+      const confirm = await Swal.fire({
+        title: "Xoá đơn nạp tiền?",
+        html: `Bạn có chắc muốn <strong style="color:#ef4444">xoá vĩnh viễn</strong> đơn nạp của <strong>${userName}</strong>?<br/><br/>Hành động này <strong>không thể hoàn tác</strong>.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: "Xoá vĩnh viễn",
+        cancelButtonText: "Huỷ",
+        background: "#16161a",
+        color: "#fff",
+      });
+
+      if (!confirm.isConfirmed) return;
+    }
+
+    setLoadingId(dep.id);
+    try {
+      const res = await fetch("/api/admin/deposits/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ depositId: dep.id }),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        if (typeof Swal !== "undefined") {
+          Swal.fire({
+            icon: "success",
+            title: "Đã xoá!",
+            text: data.message || "Xoá đơn nạp tiền thành công",
+            timer: 2000,
+            showConfirmButton: false,
+            background: "#16161a",
+            color: "#fff",
+          });
+        }
+        setDeposits((prev) => prev.filter((d) => d.id !== dep.id));
+        setTotalCount((prev) => prev - 1);
+      } else {
+        if (typeof Swal !== "undefined") {
+          Swal.fire({ icon: "error", title: "Lỗi", text: data.error || "Xoá đơn nạp thất bại", background: "#16161a", color: "#fff" });
         }
       }
     } catch {
@@ -337,39 +394,68 @@ export default function DepositsClient({ initialDeposits, total, stats }: Props)
                       : new Date(dep.createdAt).toLocaleString("vi-VN")}
                   </td>
                   <td style={{ padding: "14px 16px" }}>
-                    {isSuccess ? (
-                      <span style={{ color: "#10b981", fontSize: 12, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <Check size={14} /> Đã duyệt
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleApprove(dep)}
-                        disabled={isLoading}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          padding: "6px 12px",
-                          background: "rgba(16,185,129,0.15)",
-                          border: "1px solid rgba(16,185,129,0.3)",
-                          color: "#10b981",
-                          borderRadius: 6,
-                          cursor: isLoading ? "not-allowed" : "pointer",
-                          fontSize: 12,
-                          fontWeight: 600,
-                          transition: "all 0.15s",
-                        }}
-                        title="Duyệt thủ công và cộng tiền cho người dùng"
-                      >
-                        {isLoading ? (
-                          <span className="spinner" style={{ width: 12, height: 12 }} />
-                        ) : (
-                          <>
-                            <CheckCircle size={13} /> Duyệt đơn
-                          </>
-                        )}
-                      </button>
-                    )}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      {isSuccess ? (
+                        <span style={{ color: "#10b981", fontSize: 12, fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Check size={14} /> Đã duyệt
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleApprove(dep)}
+                          disabled={isLoading}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 12px",
+                            background: "rgba(16,185,129,0.15)",
+                            border: "1px solid rgba(16,185,129,0.3)",
+                            color: "#10b981",
+                            borderRadius: 6,
+                            cursor: isLoading ? "not-allowed" : "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            transition: "all 0.15s",
+                          }}
+                          title="Duyệt thủ công và cộng tiền cho người dùng"
+                        >
+                          {isLoading ? (
+                            <span className="spinner" style={{ width: 12, height: 12 }} />
+                          ) : (
+                            <>
+                              <CheckCircle size={13} /> Duyệt đơn
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {(dep.status === "CANCELLED" || dep.status === "PENDING") && (
+                        <button
+                          onClick={() => handleDelete(dep)}
+                          disabled={isLoading}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 10px",
+                            background: "rgba(239,68,68,0.12)",
+                            border: "1px solid rgba(239,68,68,0.3)",
+                            color: "#ef4444",
+                            borderRadius: 6,
+                            cursor: isLoading ? "not-allowed" : "pointer",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            transition: "all 0.15s",
+                          }}
+                          title="Xoá vĩnh viễn đơn nạp này"
+                        >
+                          {isLoading ? (
+                            <span className="spinner" style={{ width: 12, height: 12 }} />
+                          ) : (
+                            <Trash2 size={13} />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
