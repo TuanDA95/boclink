@@ -27,24 +27,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Đơn nạp tiền này đã được duyệt thành công trước đó!" }, { status: 400 });
     }
 
+    if (deposit.status === "CANCELLED") {
+      return NextResponse.json({ error: "Đơn nạp tiền đã bị huỷ, không thể duyệt." }, { status: 400 });
+    }
+
     const creditAmount = deposit.realValue ?? deposit.amount;
 
-    await prisma.$transaction([
-      prisma.deposit.update({
-        where: { id: depositId },
-        data: {
-          status: "SUCCESS",
-          confirmedAt: new Date(),
-          cardMessage: "Đã duyệt thủ công bởi Admin",
-        },
-      }),
-      prisma.user.update({
-        where: { id: deposit.userId },
-        data: {
-          balance: { increment: creditAmount },
-        },
-      }),
-    ]);
+    // [SECURITY] Atomic update: chỉ cập nhật nếu status vẫn là PENDING
+    // Tránh race condition khi webhook SePay và admin approve cùng lúc
+    const updatedCount = await prisma.deposit.updateMany({
+      where: { id: depositId, status: "PENDING" },
+      data: {
+        status: "SUCCESS",
+        confirmedAt: new Date(),
+        cardMessage: "Đã duyệt thủ công bởi Admin",
+      },
+    });
+
+    if (updatedCount.count === 0) {
+      // Race condition: webhook đã xử lý trước khi admin nhấn duyệt
+      return NextResponse.json(
+        { error: "Đơn nạp tiền đã được xử lý tự động trước đó. Vui lòng tải lại trang." },
+        { status: 409 }
+      );
+    }
+
+    // Cộng tiền sau khi update thành công
+    await prisma.user.update({
+      where: { id: deposit.userId },
+      data: { balance: { increment: creditAmount } },
+    });
 
     return NextResponse.json({
       success: true,

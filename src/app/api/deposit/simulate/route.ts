@@ -13,6 +13,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // [SECURITY] Chỉ cho phép trong môi trường development/sandbox HOẶC nếu là ADMIN
+  const isDevOrSandbox =
+    process.env.NODE_ENV === "development" || process.env.SEPAY_SANDBOX === "true";
+  const isAdmin = session.user.role === "ADMIN";
+
+  if (!isDevOrSandbox && !isAdmin) {
+    return NextResponse.json(
+      { error: "Tính năng này chỉ dành cho môi trường thử nghiệm." },
+      { status: 403 }
+    );
+  }
+
   const { depositId } = await req.json();
   if (!depositId) {
     return NextResponse.json({ error: "Thiếu depositId" }, { status: 400 });
