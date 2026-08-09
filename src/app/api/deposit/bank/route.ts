@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       bankAccount,
       bankName,
       qrCodeUrl,
-      expiredAt: new Date(Date.now() + 15 * 60 * 1000), // 15 phút
+      expiredAt: new Date(Date.now() + 60 * 60 * 1000), // 1 tiếng
     },
   });
 

@@ -31,7 +31,7 @@ export default function BankDepositPage() {
   const [depositInfo, setDepositInfo] = useState<DepositInfo | null>(null);
   const [status, setStatus] = useState<DepositStatus>("PENDING");
   const [copied, setCopied] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 phút
+  const [timeLeft, setTimeLeft] = useState(3600); // 1 tiếng
 
   const quickAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000];
 
@@ -102,6 +102,13 @@ export default function BankDepositPage() {
         return;
       }
       setDepositInfo(data);
+      // Tính thời gian còn lại từ expiredAt server trả về (tránh desync client/server)
+      if (data.expiredAt) {
+        const secsLeft = Math.max(0, Math.floor((new Date(data.expiredAt).getTime() - Date.now()) / 1000));
+        setTimeLeft(secsLeft);
+      } else {
+        setTimeLeft(3600);
+      }
       setStep("pending");
     } catch (err) {
       setError("Lỗi kết nối tới máy chủ. Vui lòng thử lại.");
@@ -249,7 +256,7 @@ export default function BankDepositPage() {
       ) : status === "CANCELLED" ? (
         <div className="glass-card" style={{ textAlign: "center", padding: 40 }}>
           <p style={{ fontSize: 18, fontWeight: 700, color: "#ef4444" }}>Đơn nạp đã hết hạn</p>
-          <button className="btn-primary" style={{ marginTop: 20 }} onClick={() => { setStep("form"); setTimeLeft(900); }}>
+          <button className="btn-primary" style={{ marginTop: 20 }} onClick={() => { setStep("form"); setTimeLeft(3600); }}>
             Tạo đơn mới
           </button>
         </div>
