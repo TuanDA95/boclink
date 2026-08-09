@@ -216,7 +216,8 @@ export function generatePaymentCode(userId: string, prefix?: string): string {
   const cleanId = userId.replace(/[^a-zA-Z0-9]/g, "");
   const shortId = cleanId.slice(-8).toUpperCase();
   const time = Date.now().toString().slice(-5);
-  return `${resolvedPrefix}${shortId}${time}`;
+  // Uppercase toàn bộ mã — đảm bảo khớp chính xác với webhook luôn extractCodeFromContent().toUpperCase()
+  return `${resolvedPrefix}${shortId}${time}`.toUpperCase();
 }
 
 /**

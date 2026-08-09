@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
     const now = new Date();
 
     // Ưu tiên tìm đơn PENDING khớp cả mã VÀ số tiền, chưa hết hạn
+    // paymentCode đã được .toUpperCase() trong extractCodeFromContent
+    // MySQL collation mặc định (utf8mb4_unicode_ci) không phân biệt hoa/thường → tương thích với record cũ
     let deposit = await prisma.deposit.findFirst({
       where: {
         paymentContent: paymentCode,
