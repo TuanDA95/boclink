@@ -52,14 +52,14 @@ export const quickLinkSchema = z.object({
 export const depositBankSchema = z.object({
   amount: z.coerce
     .number()
-    .min(10000, "Số tiền nạp tối thiểu 10.000 VNĐ")
+    .min(20000, "Số tiền nạp tối thiểu 20.000 VNĐ")
     .max(100000000, "Số tiền nạp tối đa 100.000.000 VNĐ"),
 });
 
 export const depositCardSchema = z.object({
   amount: z.coerce
     .number()
-    .min(10000, "Số tiền nạp tối thiểu 10.000 VNĐ")
+    .min(20000, "Số tiền nạp tối thiểu 20.000 VNĐ")
     .max(100000000, "Số tiền nạp tối đa 100.000.000 VNĐ"),
 });
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Copy, Check, RefreshCw, ArrowLeft, Clock, TestTube } from "lucide-react";
+import { Building2, Copy, Check, RefreshCw, ArrowLeft, Clock } from "lucide-react";
 
 function formatVND(amount: number) {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -26,14 +26,13 @@ export default function BankDepositPage() {
   const [step, setStep] = useState<"form" | "pending">("form");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [simulating, setSimulating] = useState(false);
   const [error, setError] = useState("");
   const [depositInfo, setDepositInfo] = useState<DepositInfo | null>(null);
   const [status, setStatus] = useState<DepositStatus>("PENDING");
   const [copied, setCopied] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(3600); // 1 tiếng
 
-  const quickAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000];
+  const quickAmounts = [20000, 50000, 100000, 200000, 500000, 1000000];
 
   // Polling trạng thái
   const checkStatus = useCallback(async () => {
@@ -85,8 +84,8 @@ export default function BankDepositPage() {
     e.preventDefault();
     setError("");
     const numAmount = parseInt(amount);
-    if (!amount || isNaN(numAmount) || numAmount < 10000) {
-      setError("Số tiền nạp tối thiểu 10.000 VNĐ");
+    if (!amount || isNaN(numAmount) || numAmount < 20000) {
+      setError("Số tiền nạp tối thiểu 20.000 VNĐ");
       return;
     }
     setLoading(true);
@@ -114,25 +113,6 @@ export default function BankDepositPage() {
       setError("Lỗi kết nối tới máy chủ. Vui lòng thử lại.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSimulatePayment = async () => {
-    if (!depositInfo) return;
-    setSimulating(true);
-    try {
-      const res = await fetch("/api/deposit/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ depositId: depositInfo.depositId }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatus("SUCCESS");
-        setTimeout(() => router.push(`/deposit/success?depositId=${depositInfo.depositId}`), 1000);
-      }
-    } finally {
-      setSimulating(false);
     }
   };
 
@@ -180,7 +160,7 @@ export default function BankDepositPage() {
               id="amount"
               className="input"
               type="number"
-              min="10000"
+              min="20000"
               step="1000"
               placeholder="Nhập số tiền..."
               value={amount}
@@ -280,31 +260,6 @@ export default function BankDepositPage() {
             <p style={{ fontSize: 13, color: "#94a3b8", marginTop: 12 }}>
               Mở app ngân hàng → Quét mã QR
             </p>
-
-            {/* Sandbox Simulation Button */}
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed rgba(255,255,255,0.08)" }}>
-              <button
-                onClick={handleSimulatePayment}
-                disabled={simulating}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "rgba(99,102,241,0.12)",
-                  border: "1px solid rgba(99,102,241,0.25)",
-                  color: "#818cf8",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                {simulating ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <><TestTube size={15} /> 🧪 [DEV / TEST SANDBOX] Giả lập nạp tiền thành công (1-click)</>}
-              </button>
-            </div>
           </div>
 
           {/* Info */}
