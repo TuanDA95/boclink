@@ -39,7 +39,7 @@ const LOCKED_IMG = "/lock.png";
 
 export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, userBalance, freeLinkEnabled = true, adClickUrl = "", adUrls = [], interstitialAdUrls = [], interstitialAdUrl = "" }: Props) {
   const router = useRouter();
-  const [screen, setScreen] = useState<Screen>("loading");
+  const [screen, setScreen] = useState<Screen>("main");
   const [imageClicked, setImageClicked] = useState(false);
   const [btnEnabled, setBtnEnabled] = useState(false);
   const [currentImg, setCurrentImg] = useState(LOCKED_IMG);
@@ -62,21 +62,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
     : (interstitialAdUrl.trim() ? [interstitialAdUrl.trim()] : []);
   const totalInterstitialSteps = activeInterstitialUrls.length;
 
-  // Simulate IP/geo check then show main UI
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setScreen("main");
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // If already purchased, show main UI immediately (skip loading)
-  useEffect(() => {
-    if (alreadyPurchased) setScreen("main");
-  }, [alreadyPurchased]);
-
   const startFreeFlow = () => {
-    setScreen("interstitial");
     setImageClicked(false);
     setBtnEnabled(false);
     setCurrentImg(LOCKED_IMG);
