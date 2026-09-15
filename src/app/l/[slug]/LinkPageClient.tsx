@@ -51,6 +51,13 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
   const [isWaitingStepTimer, setIsWaitingStepTimer] = useState(false);
   const [stepTimer, setStepTimer] = useState(0);
   const swalLoaded = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   // adUrls chỉ dùng để bọc URL khi "Tiếp tục"
   const wrapAdUrls = adUrls && adUrls.length > 0 ? adUrls : (adClickUrl ? [adClickUrl] : []);
@@ -63,6 +70,11 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
   const totalInterstitialSteps = activeInterstitialUrls.length;
 
   const startFreeFlow = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setScreen("interstitial");
     setImageClicked(false);
     setBtnEnabled(false);
     setCurrentImg(LOCKED_IMG);
@@ -95,6 +107,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
       setStepTimer((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
+          timerRef.current = null;
           setIsWaitingStepTimer(false);
           const nextStep = stepIdx + 1;
           if (nextStep >= totalInterstitialSteps) {
@@ -109,6 +122,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
         return prev - 1;
       });
     }, 1000);
+    timerRef.current = interval;
   };
 
   const continueToFreeLink = async () => {
@@ -732,7 +746,14 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
 
 
               <button
-                onClick={() => setScreen("main")}
+                onClick={() => {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                    timerRef.current = null;
+                  }
+                  setIsWaitingStepTimer(false);
+                  setScreen("main");
+                }}
                 style={{ background: "none", border: "none", color: "#666", cursor: "pointer", marginTop: 12, fontSize: "0.82rem", display: "block", margin: "12px auto 0" }}
               >
                 ← Quay lại
