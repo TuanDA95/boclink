@@ -265,8 +265,26 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
     }
   };
 
+  const fallbackCopyText = (text: string, cb?: () => void) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (cb) cb();
+    } catch {
+      // ignore
+    }
+  };
+
   const copyCode = () => {
-    navigator.clipboard.writeText(link.slug).then(() => {
+    const handleSuccess = () => {
       if (typeof Swal !== "undefined") {
         Swal.fire({
           toast: true,
@@ -279,7 +297,15 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           color: "#fff",
         });
       }
-    });
+    };
+
+    if (typeof navigator !== "undefined" && navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      navigator.clipboard.writeText(link.slug).then(handleSuccess).catch(() => {
+        fallbackCopyText(link.slug, handleSuccess);
+      });
+    } else {
+      fallbackCopyText(link.slug, handleSuccess);
+    }
   };
 
   return (
@@ -293,6 +319,8 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           min-height: 100vh;
           margin: 0;
           color: #e0e0e0;
+          -webkit-tap-highlight-color: transparent;
+          cursor: pointer;
         }
 
         .lp-wrap {
@@ -315,7 +343,12 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           padding: 48px 36px;
           width: 100%;
           box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 25px rgba(26, 213, 250, 0.1);
+          -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+          position: relative;
+          z-index: 1;
           text-align: center;
         }
 
@@ -366,9 +399,14 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           padding: 5px 14px;
           font-size: 0.82rem;
           cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
           transition: 0.2s;
         }
-        .btn-copy-code:hover { background: rgba(26,213,250,0.12); }
+        .btn-copy-code:active {
+          transform: scale(0.95);
+          background: rgba(26,213,250,0.2);
+        }
 
         .options-grid {
           display: grid;
@@ -399,17 +437,13 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           overflow: hidden;
           transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           min-height: 280px;
+          -webkit-tap-highlight-color: transparent;
         }
 
         .option-box.free-box {
           border: 1.5px solid #1ad5fa;
           background: rgba(22, 24, 30, 0.95);
           box-shadow: 0 0 20px rgba(26, 213, 250, 0.12);
-        }
-        .option-box.free-box:hover {
-          transform: translateY(-6px);
-          border-color: #1ad5fa;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 30px rgba(26, 213, 250, 0.3);
         }
 
         .option-icon-cyan {
@@ -455,12 +489,6 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
         .option-box.buy-box {
           border-color: rgba(255, 193, 7, 0.35);
         }
-        .option-box.buy-box:hover {
-          transform: translateY(-8px);
-          background: rgba(255, 193, 7, 0.04);
-          border-color: #ffc107;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,193,7,0.15);
-        }
 
         .option-icon { font-size: 2.8rem; display: block; margin-bottom: 10px; }
         .option-title { font-weight: 700; font-size: 1.3rem; margin-bottom: 8px; }
@@ -500,8 +528,10 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           cursor: pointer;
           transition: all 0.25s;
           margin-top: 14px;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          -webkit-appearance: none;
         }
-
 
         .btn-free {
           background: transparent;
@@ -510,11 +540,13 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           border-radius: 14px;
           font-weight: 800;
           font-size: 0.9rem;
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          cursor: pointer;
         }
-        .btn-free:hover {
-          background: rgba(26, 213, 250, 0.15);
-          color: #1ad5fa;
-          box-shadow: 0 0 20px rgba(26,213,250,0.4);
+        .btn-free:active {
+          transform: scale(0.98);
+          background: rgba(26, 213, 250, 0.2);
         }
         .btn-free:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -522,13 +554,45 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           background: linear-gradient(45deg, #ffc107, #ff9800);
           color: #000;
           box-shadow: 0 4px 15px rgba(255,193,7,0.3);
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
+          cursor: pointer;
         }
-        .btn-buy:hover {
-          transform: scale(1.02);
-          box-shadow: 0 6px 20px rgba(255,193,7,0.5);
-          filter: brightness(1.08);
+        .btn-buy:active {
+          transform: scale(0.98);
+          filter: brightness(0.95);
         }
         .btn-buy:disabled { opacity: 0.6; cursor: not-allowed; filter: none; transform: none; }
+
+        /* Hover only for devices with a real pointer/mouse (prevents iOS Safari hover trap) */
+        @media (hover: hover) and (pointer: fine) {
+          .btn-copy-code:hover { background: rgba(26,213,250,0.12); }
+          .option-box.free-box:hover {
+            transform: translateY(-6px);
+            border-color: #1ad5fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 30px rgba(26, 213, 250, 0.3);
+          }
+          .option-box.buy-box:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 193, 7, 0.04);
+            border-color: #ffc107;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 15px rgba(255,193,7,0.15);
+          }
+          .btn-free:hover {
+            background: rgba(26, 213, 250, 0.15);
+            color: #1ad5fa;
+            box-shadow: 0 0 20px rgba(26,213,250,0.4);
+          }
+          .btn-buy:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(255,193,7,0.5);
+            filter: brightness(1.08);
+          }
+          .interstitial-img-wrap:hover {
+            border-color: #1ad5fa;
+            box-shadow: 0 0 20px rgba(26, 213, 250, 0.3);
+          }
+        }
 
         /* Loader */
         .loader-wrap {
@@ -559,10 +623,8 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           margin: 20px 0;
           border: 2px solid rgba(26, 213, 250, 0.4);
           transition: all 0.25s;
-        }
-        .interstitial-img-wrap:hover {
-          border-color: #1ad5fa;
-          box-shadow: 0 0 20px rgba(26, 213, 250, 0.3);
+          -webkit-tap-highlight-color: transparent;
+          touch-action: manipulation;
         }
         .interstitial-img-wrap img {
           width: 100%;
@@ -581,6 +643,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
           font-size: 0.85rem;
           font-weight: 700;
           text-align: center;
+          -webkit-backdrop-filter: blur(4px);
           backdrop-filter: blur(4px);
         }
 
@@ -635,7 +698,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
               <div className="link-code-box">
                 <span className="link-code-label">MÃ LINK:</span>
                 <span className="link-code-value">{link.slug}</span>
-                <button className="btn-copy-code" onClick={copyCode}>
+                <button type="button" className="btn-copy-code" onClick={copyCode}>
                   Copy
                 </button>
               </div>
@@ -658,7 +721,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
                         <strong>VN</strong> Vượt link mã
                       </div>
                     </div>
-                    <button className="btn-custom btn-free" onClick={startFreeFlow}>
+                    <button type="button" className="btn-custom btn-free" onClick={startFreeFlow}>
                       BẮT ĐẦU VƯỢT LINK
                     </button>
                   </div>
@@ -690,6 +753,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
                     )}
                   </div>
                   <button
+                    type="button"
                     className="btn-custom btn-buy"
                     onClick={handleBuy}
                     disabled={buying}
@@ -720,7 +784,15 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
 
               <div
                 className="interstitial-img-wrap"
+                role="button"
+                tabIndex={0}
                 onClick={onImageClick}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onImageClick();
+                  }
+                }}
                 style={{ pointerEvents: (btnEnabled || isWaitingStepTimer) ? "none" : "auto" }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -737,6 +809,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
               </div>
 
               <button
+                type="button"
                 className="btn-custom btn-free btn-continue"
                 disabled={!btnEnabled || redirecting}
                 onClick={continueToFreeLink}
@@ -746,6 +819,7 @@ export default function LinkPageClient({ link, isLoggedIn, alreadyPurchased, use
 
 
               <button
+                type="button"
                 onClick={() => {
                   if (timerRef.current) {
                     clearInterval(timerRef.current);
