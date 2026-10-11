@@ -16,6 +16,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
 
+    const cardEnabled = (await getSetting("CARD_DEPOSIT_ENABLED", "true")) !== "false";
+    if (!cardEnabled) {
+      return NextResponse.json(
+        { error: "Phương thức nạp thẻ cào hiện đang tạm đóng hoặc bảo trì." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { telco, code, serial } = body;
     const declaredValue = body.declaredValue ?? body.amount;

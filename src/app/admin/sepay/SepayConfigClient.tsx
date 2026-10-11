@@ -44,10 +44,11 @@ function CopyButton({ text }: { text: string }) {
 
 export default function SepayConfigClient({ initialSettings, webhookUrl }: Props) {
   const [form, setForm] = useState({
+    BANK_DEPOSIT_ENABLED: initialSettings.BANK_DEPOSIT_ENABLED ?? "true",
     SEPAY_BANK_NAME: initialSettings.SEPAY_BANK_NAME || "MBBank",
     SEPAY_BANK_ACCOUNT: initialSettings.SEPAY_BANK_ACCOUNT || "",
     SEPAY_BANK_OWNER: initialSettings.SEPAY_BANK_OWNER || "",
-    SEPAY_PAYMENT_PREFIX: initialSettings.SEPAY_PAYMENT_PREFIX || "SUB2S",
+    SEPAY_PAYMENT_PREFIX: initialSettings.SEPAY_PAYMENT_PREFIX || "NAP",
     SEPAY_WEBHOOK_SECRET: initialSettings.SEPAY_WEBHOOK_SECRET || "",
     SEPAY_MERCHANT_ID: initialSettings.SEPAY_MERCHANT_ID || "",
     SEPAY_SECRET_KEY: initialSettings.SEPAY_SECRET_KEY || "",
@@ -102,6 +103,21 @@ export default function SepayConfigClient({ initialSettings, webhookUrl }: Props
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>Chuyển khoản Ngân hàng (VietQR Tự động)</h2>
           </div>
 
+          {/* Toggle Bật/Tắt nạp ngân hàng */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 20 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>Trạng thái nạp tiền qua Ngân hàng</p>
+              <p style={{ fontSize: 12, color: "#94a3b8" }}>Bật hoặc tạm dừng tính năng nạp tiền qua Chuyển khoản VietQR</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, BANK_DEPOSIT_ENABLED: p.BANK_DEPOSIT_ENABLED === "true" ? "false" : "true" }))}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid", cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.2s", background: form.BANK_DEPOSIT_ENABLED === "true" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", borderColor: form.BANK_DEPOSIT_ENABLED === "true" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)", color: form.BANK_DEPOSIT_ENABLED === "true" ? "#10b981" : "#ef4444" }}
+            >
+              {form.BANK_DEPOSIT_ENABLED === "true" ? "● Đang BẬT" : "○ Đang TẮT"}
+            </button>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16, marginBottom: 16 }}>
             <div>
               <label className="label">Ngân hàng thụ hưởng *</label>
@@ -148,13 +164,13 @@ export default function SepayConfigClient({ initialSettings, webhookUrl }: Props
               <input
                 className="input"
                 style={{ height: 42, background: "#11131f", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "monospace", fontWeight: 700 }}
-                placeholder="SUB2S"
+                placeholder="NAP"
                 value={form.SEPAY_PAYMENT_PREFIX}
                 onChange={(e) => setForm({ ...form, SEPAY_PAYMENT_PREFIX: e.target.value.toUpperCase() })}
                 required
               />
               <span style={{ fontSize: 11, color: "#64748b", marginTop: 4, display: "block" }}>
-                Mã nội dung sẽ có dạng: <code>{form.SEPAY_PAYMENT_PREFIX || "SUB2S"}XXXXXX</code>
+                Mã nội dung ngắn gọn: <code>{form.SEPAY_PAYMENT_PREFIX || "NAP"}123456</code> (tiền tố + 6 số ngẫu nhiên, chống lỗi app ngân hàng)
               </span>
             </div>
           </div>

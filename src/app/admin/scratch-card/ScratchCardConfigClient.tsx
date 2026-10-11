@@ -30,6 +30,7 @@ function CopyButton({ text }: { text: string }) {
 
 export default function ScratchCardConfigClient({ initialSettings, webhookUrl }: Props) {
   const [form, setForm] = useState({
+    CARD_DEPOSIT_ENABLED: initialSettings.CARD_DEPOSIT_ENABLED ?? "true",
     CARD_PARTNER_ID: initialSettings.CARD_PARTNER_ID || "",
     CARD_PARTNER_KEY: initialSettings.CARD_PARTNER_KEY || "",
     CARD_API_URL: initialSettings.CARD_API_URL || "https://doithe1s.vn/chargingws/v2",
@@ -89,6 +90,21 @@ export default function ScratchCardConfigClient({ initialSettings, webhookUrl }:
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             <CreditCard size={20} color="#f59e0b" />
             <h2 style={{ fontSize: 16, fontWeight: 700, color: "#e2e8f0" }}>Thông tin Kết nối Cổng Gạch Thẻ</h2>
+          </div>
+
+          {/* Toggle Bật/Tắt nạp thẻ cào */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 20 }}>
+            <div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0" }}>Trạng thái nạp tiền qua Thẻ Cào</p>
+              <p style={{ fontSize: 12, color: "#94a3b8" }}>Bật hoặc tạm dừng tính năng nạp thẻ cào điện thoại & thẻ game</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, CARD_DEPOSIT_ENABLED: p.CARD_DEPOSIT_ENABLED === "true" ? "false" : "true" }))}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid", cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.2s", background: form.CARD_DEPOSIT_ENABLED === "true" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)", borderColor: form.CARD_DEPOSIT_ENABLED === "true" ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)", color: form.CARD_DEPOSIT_ENABLED === "true" ? "#10b981" : "#ef4444" }}
+            >
+              {form.CARD_DEPOSIT_ENABLED === "true" ? "● Đang BẬT" : "○ Đang TẮT"}
+            </button>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>

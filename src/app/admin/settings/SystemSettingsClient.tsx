@@ -27,6 +27,8 @@ export interface AdLayer {
 
 interface Props {
   initialFreeEnabled: boolean;
+  initialBankDepositEnabled?: boolean;
+  initialCardDepositEnabled?: boolean;
   initialDefaultPrice: number;
   initialAdLayers: AdLayer[];
   initialInterstitialAdLayers: AdLayer[];
@@ -51,6 +53,8 @@ function toast(msg: string, icon = "success") {
 
 export default function SystemSettingsClient({
   initialFreeEnabled,
+  initialBankDepositEnabled = true,
+  initialCardDepositEnabled = true,
   initialDefaultPrice,
   initialAdLayers,
   initialInterstitialAdLayers,
@@ -58,6 +62,8 @@ export default function SystemSettingsClient({
 }: Props) {
   const router = useRouter();
   const [freeEnabled,          setFreeEnabled]          = useState(initialFreeEnabled);
+  const [bankDepositEnabled,   setBankDepositEnabled]   = useState(initialBankDepositEnabled);
+  const [cardDepositEnabled,   setCardDepositEnabled]   = useState(initialCardDepositEnabled);
   const [defaultPrice,         setDefaultPrice]         = useState(initialDefaultPrice.toString());
   const [chatLinkUrl,          setChatLinkUrl]          = useState(initialChatLinkUrl);
   const [adLayers,             setAdLayers]             = useState<AdLayer[]>(initialAdLayers);
@@ -93,6 +99,8 @@ export default function SystemSettingsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           FREE_LINK_ENABLED: freeEnabled ? "true" : "false",
+          BANK_DEPOSIT_ENABLED: bankDepositEnabled ? "true" : "false",
+          CARD_DEPOSIT_ENABLED: cardDepositEnabled ? "true" : "false",
           DEFAULT_LINK_PRICE: defaultPrice,
           CHAT_LINK_URL: chatLinkUrl,
           AD_LAYERS: JSON.stringify(adLayers),
@@ -399,6 +407,45 @@ export default function SystemSettingsClient({
               />
             </div>
             <span className="price-hint">Đường dẫn khi người dùng nhấn vào biểu tượng Chat nổi bên ngoài trang. Để trống để ẩn biểu tượng.</span>
+          </div>
+        </div>
+        <div className="sc-card-ft">
+          <button className="btn-save" onClick={saveGeneral} disabled={savingGeneral}>
+            {savingGeneral ? <><span className="spin-xs" /> Đang lưu...</> : <><Save size={13} /> Lưu</>}
+          </button>
+        </div>
+      </div>
+
+      {/* ═══ CARD: Phương thức nạp tiền ═══ */}
+      <div className="sc-card">
+        <div className="sc-card-hd">
+          <div className="sc-card-title">💳 Phương thức nạp tiền</div>
+        </div>
+        <div className="sc-card-body">
+          {/* Bank deposit toggle */}
+          <div className="tog-row">
+            <div>
+              <div className="tog-label">🏦 Nạp tiền qua Ngân hàng (VietQR / SePay)</div>
+              <div className="tog-desc">Khi TẮT, người dùng sẽ không thể chọn hoặc nạp tiền qua phương thức chuyển khoản ngân hàng.</div>
+            </div>
+            <button className="tog-btn" onClick={() => setBankDepositEnabled((v) => !v)}>
+              {bankDepositEnabled
+                ? <ToggleRight size={40} color="#10b981" />
+                : <ToggleLeft  size={40} color="#475569" />}
+            </button>
+          </div>
+
+          {/* Card deposit toggle */}
+          <div className="tog-row" style={{ marginTop: 12 }}>
+            <div>
+              <div className="tog-label">🎫 Nạp tiền qua Thẻ cào (Card)</div>
+              <div className="tog-desc">Khi TẮT, chức năng nạp thẻ cào điện thoại & thẻ game sẽ tạm đóng đối với người dùng.</div>
+            </div>
+            <button className="tog-btn" onClick={() => setCardDepositEnabled((v) => !v)}>
+              {cardDepositEnabled
+                ? <ToggleRight size={40} color="#10b981" />
+                : <ToggleLeft  size={40} color="#475569" />}
+            </button>
           </div>
         </div>
         <div className="sc-card-ft">

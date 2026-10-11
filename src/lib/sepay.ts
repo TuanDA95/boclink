@@ -206,18 +206,30 @@ export function verifySePayWebhook(
 }
 
 /**
- * Tạo mã thanh toán duy nhất cho bank transfer
- * @param userId - ID người dùng
+ * Tạo mã thanh toán ngắn gọn, duy nhất cho bank transfer
+ * Ví dụ: NAP123456 (ngắn gọn, chống nhầm lẫn, tiện nhập/copy trên app ngân hàng)
+ * @param userIdOrPrefix - ID người dùng hoặc tiền tố
  * @param prefix - Tiền tố nội dung chuyển khoản (lấy từ DB qua getSetting)
  */
-export function generatePaymentCode(userId: string, prefix?: string): string {
-  const resolvedPrefix = prefix || process.env.SEPAY_PAYMENT_PREFIX || "SUB2S";
-  // Loại bỏ tất cả ký tự không phải alphanumeric (đặc biệt dấu _ trong userId cũ c_XXXX)
-  const cleanId = userId.replace(/[^a-zA-Z0-9]/g, "");
-  const shortId = cleanId.slice(-8).toUpperCase();
-  const time = Date.now().toString().slice(-5);
-  // Uppercase toàn bộ mã — đảm bảo khớp chính xác với webhook luôn extractCodeFromContent().toUpperCase()
-  return `${resolvedPrefix}${shortId}${time}`.toUpperCase();
+export function generatePaymentCode(userIdOrPrefix?: string, prefix?: string): string {
+  let resolvedPrefix = "NAP";
+  if (prefix && typeof prefix === "string" && prefix.trim() !== "") {
+    resolvedPrefix = prefix.trim().toUpperCase();
+  } else if (
+    userIdOrPrefix &&
+    typeof userIdOrPrefix === "string" &&
+    userIdOrPrefix.trim() !== "" &&
+    !userIdOrPrefix.startsWith("c") &&
+    userIdOrPrefix.length <= 8
+  ) {
+    resolvedPrefix = userIdOrPrefix.trim().toUpperCase();
+  } else if (process.env.SEPAY_PAYMENT_PREFIX) {
+    resolvedPrefix = process.env.SEPAY_PAYMENT_PREFIX.trim().toUpperCase();
+  }
+
+  const cleanPrefix = resolvedPrefix.replace(/[^A-Z0-9]/g, "") || "NAP";
+  const randomNum = Math.floor(100000 + Math.random() * 900000);
+  return `${cleanPrefix}${randomNum}`;
 }
 
 /**

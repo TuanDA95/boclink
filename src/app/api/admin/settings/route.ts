@@ -5,6 +5,8 @@ import { getSetting, saveSettings } from "@/lib/settings";
 // setting keys chính
 export const CORE_SETTING_KEYS = [
   "FREE_LINK_ENABLED",        // "true" | "false"
+  "BANK_DEPOSIT_ENABLED",     // "true" | "false" (Nạp tiền qua ngân hàng)
+  "CARD_DEPOSIT_ENABLED",     // "true" | "false" (Nạp tiền qua thẻ cào)
   "DEFAULT_LINK_PRICE",       // số đồng, VD "5000"
   "AD_LAYERS",                // JSON string của AdLayer[] (Bọc link)
   "INTERSTITIAL_AD_LAYERS",   // JSON string của AdLayer[] (Quảng cáo hình ảnh)
@@ -13,6 +15,8 @@ export const CORE_SETTING_KEYS = [
 
 export const CORE_SETTING_DEFAULTS: Record<string, string> = {
   FREE_LINK_ENABLED: "true",
+  BANK_DEPOSIT_ENABLED: "true",
+  CARD_DEPOSIT_ENABLED: "true",
   DEFAULT_LINK_PRICE: "5000",
   AD_LAYERS: "[]",
   INTERSTITIAL_AD_LAYERS: "[]",

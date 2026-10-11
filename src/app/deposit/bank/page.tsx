@@ -53,6 +53,17 @@ export default function BankDepositPage() {
   }, [depositInfo, status, router]);
 
   useEffect(() => {
+    fetch("/api/public/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.bankDepositEnabled === false) {
+          router.replace("/deposit");
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
+  useEffect(() => {
     if (step !== "pending") return;
     const interval = setInterval(checkStatus, 5000);
     return () => clearInterval(interval);

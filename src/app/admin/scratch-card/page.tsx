@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Cấu hình Thẻ Cào - Admin" };
 
 const SCRATCH_CARD_KEYS = [
+  "CARD_DEPOSIT_ENABLED",
   "CARD_PARTNER_ID",
   "CARD_PARTNER_KEY",
   "CARD_API_URL",
@@ -28,7 +29,7 @@ export default async function AdminScratchCardPage() {
 
   const initialSettings: Record<string, string> = {};
   for (const key of SCRATCH_CARD_KEYS) {
-    initialSettings[key] = await getSetting(key, "");
+    initialSettings[key] = await getSetting(key, key === "CARD_DEPOSIT_ENABLED" ? "true" : "");
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

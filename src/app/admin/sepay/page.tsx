@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Cấu hình SePay - Admin" };
 
 const SEPAY_SETTING_KEYS = [
+  "BANK_DEPOSIT_ENABLED",
   "SEPAY_BANK_NAME",
   "SEPAY_BANK_ACCOUNT",
   "SEPAY_BANK_OWNER",
@@ -34,10 +35,12 @@ export default async function AdminSepayPage() {
   for (const key of SEPAY_SETTING_KEYS) {
     initialSettings[key] = await getSetting(
       key,
-      key === "SEPAY_BANK_NAME"
+      key === "BANK_DEPOSIT_ENABLED"
+        ? "true"
+        : key === "SEPAY_BANK_NAME"
         ? "MBBank"
         : key === "SEPAY_PAYMENT_PREFIX"
-        ? "SUB2S"
+        ? "NAP"
         : key === "SEPAY_SANDBOX"
         ? "false"
         : ""

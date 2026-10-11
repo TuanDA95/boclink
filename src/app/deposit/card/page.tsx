@@ -14,6 +14,11 @@ export default async function ScratchCardDepositPage() {
     redirect("/login");
   }
 
+  const cardEnabled = (await getSetting("CARD_DEPOSIT_ENABLED", "true")) !== "false";
+  if (!cardEnabled) {
+    redirect("/deposit");
+  }
+
   // Lấy danh sách % chiết khấu cho từng nhà mạng
   const discounts: Record<string, number> = {};
   for (const t of TELCOS) {

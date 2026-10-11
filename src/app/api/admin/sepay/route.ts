@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getSetting, saveSettings } from "@/lib/settings";
 
 const SEPAY_SETTING_KEYS = [
+  "BANK_DEPOSIT_ENABLED",
   "SEPAY_BANK_NAME",
   "SEPAY_BANK_ACCOUNT",
   "SEPAY_BANK_OWNER",
@@ -28,7 +29,7 @@ export async function GET() {
         key === "SEPAY_BANK_NAME"
           ? "MBBank"
           : key === "SEPAY_PAYMENT_PREFIX"
-          ? "SUB2S"
+          ? "NAP"
           : key === "SEPAY_SANDBOX"
           ? "false"
           : ""

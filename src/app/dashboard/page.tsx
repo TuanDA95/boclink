@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
 
   const since12h = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
-  const [user, links, deposits, purchases] = await Promise.all([
+  const [user, links, deposits, purchases, bankDepositRaw, cardDepositRaw] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true, name: true, email: true, balance: true, apiToken: true, role: true },
@@ -40,11 +41,16 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
+    getSetting("BANK_DEPOSIT_ENABLED", "true"),
+    getSetting("CARD_DEPOSIT_ENABLED", "true"),
   ]);
 
   if (!user) {
     redirect("/login");
   }
+
+  const bankDepositEnabled = bankDepositRaw !== "false" && bankDepositRaw !== "0";
+  const cardDepositEnabled = cardDepositRaw !== "false" && cardDepositRaw !== "0";
 
   return (
     <DashboardClient
@@ -53,6 +59,8 @@ export default async function DashboardPage() {
       deposits={JSON.parse(JSON.stringify(deposits))}
       purchases={JSON.parse(JSON.stringify(purchases))}
       domain={domain}
+      bankDepositEnabled={bankDepositEnabled}
+      cardDepositEnabled={cardDepositEnabled}
     />
   );
 }

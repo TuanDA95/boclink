@@ -12,8 +12,19 @@ export default async function AdminSettingsPage() {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/");
 
-  const [freeLinkRaw, defaultPriceRaw, adLayersRaw, interstitialAdLayersRaw, interstitialAdUrl, chatLinkUrl] = await Promise.all([
+  const [
+    freeLinkRaw,
+    bankDepositRaw,
+    cardDepositRaw,
+    defaultPriceRaw,
+    adLayersRaw,
+    interstitialAdLayersRaw,
+    interstitialAdUrl,
+    chatLinkUrl,
+  ] = await Promise.all([
     getSetting("FREE_LINK_ENABLED", "true"),
+    getSetting("BANK_DEPOSIT_ENABLED", "true"),
+    getSetting("CARD_DEPOSIT_ENABLED", "true"),
     getSetting("DEFAULT_LINK_PRICE", "5000"),
     getSetting("AD_LAYERS", "[]"),
     getSetting("INTERSTITIAL_AD_LAYERS", "[]"),
@@ -40,10 +51,14 @@ export default async function AdminSettingsPage() {
   }
 
   const isFreeEnabled = freeLinkRaw === "true" || freeLinkRaw === "1";
+  const isBankDepositEnabled = bankDepositRaw !== "false" && bankDepositRaw !== "0";
+  const isCardDepositEnabled = cardDepositRaw !== "false" && cardDepositRaw !== "0";
 
   return (
     <SystemSettingsClient
       initialFreeEnabled={isFreeEnabled}
+      initialBankDepositEnabled={isBankDepositEnabled}
+      initialCardDepositEnabled={isCardDepositEnabled}
       initialDefaultPrice={parseFloat(defaultPriceRaw) || 5000}
       initialAdLayers={adLayers}
       initialInterstitialAdLayers={interstitialAdLayers}

@@ -35,46 +35,75 @@ export async function POST(req: NextRequest) {
     }
 
     // Tìm Deposit record theo mã thanh toán trong nội dung
-    const prefix = await getSetting("SEPAY_PAYMENT_PREFIX", "SUB2S");
-    const paymentCode = payload.code || extractCodeFromContent(payload.content, prefix);
-
-    if (!paymentCode) {
-      console.log(`[SePay Webhook] Không tìm thấy mã thanh toán trong nội dung: ${payload.content}`);
-      return NextResponse.json({ success: true });
-    }
+    const prefix = await getSetting("SEPAY_PAYMENT_PREFIX", "NAP");
+    const paymentCode = payload.code?.toUpperCase() || extractCodeFromContent(payload.content, prefix);
 
     const now = new Date();
+    let deposit = null;
 
-    // Ưu tiên tìm đơn PENDING khớp cả mã VÀ số tiền, chưa hết hạn
-    // paymentCode đã được .toUpperCase() trong extractCodeFromContent
-    // MySQL collation mặc định (utf8mb4_unicode_ci) không phân biệt hoa/thường → tương thích với record cũ
-    let deposit = await prisma.deposit.findFirst({
-      where: {
-        paymentContent: paymentCode,
-        amount: payload.transferAmount,
-        status: "PENDING",
-        OR: [{ expiredAt: null }, { expiredAt: { gt: now } }],
-      },
-      include: { user: true },
-    });
-
-    // Fallback: tìm đơn PENDING bất kỳ cùng mã, chưa hết hạn (người dùng chuyển sai số tiền)
-    if (!deposit) {
+    if (paymentCode) {
+      // Ưu tiên tìm đơn PENDING khớp cả mã VÀ số tiền, chưa hết hạn
       deposit = await prisma.deposit.findFirst({
         where: {
           paymentContent: paymentCode,
+          amount: payload.transferAmount,
           status: "PENDING",
           OR: [{ expiredAt: null }, { expiredAt: { gt: now } }],
         },
         include: { user: true },
       });
+
+      // Fallback: tìm đơn PENDING bất kỳ cùng mã, chưa hết hạn (người dùng chuyển sai số tiền)
+      if (!deposit) {
+        deposit = await prisma.deposit.findFirst({
+          where: {
+            paymentContent: paymentCode,
+            status: "PENDING",
+            OR: [{ expiredAt: null }, { expiredAt: { gt: now } }],
+          },
+          include: { user: true },
+        });
+      }
+    }
+
+    // Fallback bổ sung: nếu chưa tìm thấy bằng paymentCode, quét kiểm tra các đơn PENDING đang mở
+    // xem paymentContent có nằm trong nội dung chuyển khoản không
+    if (!deposit) {
+      const pendingDeposits = await prisma.deposit.findMany({
+        where: {
+          method: "BANK_TRANSFER",
+          status: "PENDING",
+          OR: [{ expiredAt: null }, { expiredAt: { gt: now } }],
+        },
+        include: { user: true },
+      });
+
+      const normalizedPayload = (payload.content || "").replace(/[\s._-]+/g, "").toUpperCase();
+
+      // Ưu tiên khớp cả số tiền
+      deposit =
+        pendingDeposits.find((d) => {
+          if (!d.paymentContent) return false;
+          const normalizedCode = d.paymentContent.replace(/[\s._-]+/g, "").toUpperCase();
+          return d.amount === payload.transferAmount && normalizedPayload.includes(normalizedCode);
+        }) || null;
+
+      // Nếu vẫn chưa thấy, tìm đơn khớp mã dù số tiền lệch
+      if (!deposit) {
+        deposit =
+          pendingDeposits.find((d) => {
+            if (!d.paymentContent) return false;
+            const normalizedCode = d.paymentContent.replace(/[\s._-]+/g, "").toUpperCase();
+            return normalizedPayload.includes(normalizedCode);
+          }) || null;
+      }
     }
 
     if (!deposit) {
       // Kiểm tra xem có đơn PENDING nào đã hết hạn không → log cảnh báo để admin biết
       const expiredDeposit = await prisma.deposit.findFirst({
         where: {
-          paymentContent: paymentCode,
+          paymentContent: paymentCode || undefined,
           status: "PENDING",
           expiredAt: { lte: now },
         },
@@ -89,7 +118,7 @@ export async function POST(req: NextRequest) {
         );
       } else {
         console.log(
-          `[SePay Webhook] Không tìm thấy đơn nạp PENDING phù hợp — mã: ${paymentCode}, ` +
+          `[SePay Webhook] Không tìm thấy đơn nạp PENDING phù hợp — mã: ${paymentCode || "N/A"}, ` +
           `số tiền: ${formatVND(payload.transferAmount)}, txId: ${payload.id}`
         );
       }
@@ -139,7 +168,23 @@ export async function POST(req: NextRequest) {
 }
 
 function extractCodeFromContent(content: string, prefix: string): string | null {
-  const regex = new RegExp(`(${prefix}[A-Z0-9_-]+)`, "i");
-  const match = content.match(regex);
-  return match ? match[1].toUpperCase() : null;
+  if (!content) return null;
+  const cleanPrefix = prefix.replace(/[^a-zA-Z0-9]/g, "");
+  if (!cleanPrefix) return null;
+
+  // 1. Match chính xác dạng PREFIX + 6 số (cho phép có khoảng trắng giữa prefix và số, ví dụ NAP123456 hoặc NAP 123456)
+  const pattern6Digits = new RegExp(`(?:^|[^a-zA-Z0-9])(${cleanPrefix})\\s*(\\d{6})`, "i");
+  const match6 = content.match(pattern6Digits);
+  if (match6) {
+    return `${match6[1]}${match6[2]}`.toUpperCase();
+  }
+
+  // 2. Match theo prefix bất kỳ theo sau là chuỗi alphanumeric (hỗ trợ mã cũ dài hoặc ký tự khác)
+  const fallbackPattern = new RegExp(`(${cleanPrefix}[A-Z0-9_-]+)`, "i");
+  const fallbackMatch = content.match(fallbackPattern);
+  if (fallbackMatch) {
+    return fallbackMatch[1].toUpperCase();
+  }
+
+  return null;
 }

@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatVND } from "@/lib/sepay";
-import { Wallet, CreditCard, Building2, Clock, ChevronRight, Phone } from "lucide-react";
+import { getSetting } from "@/lib/settings";
+import { Wallet, CreditCard, Building2, Clock, ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Nạp tiền - API Key" };
@@ -12,19 +13,26 @@ export default async function DepositPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { balance: true },
-  });
+  const [user, recentDeposits, bankDepositRaw, cardDepositRaw] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { balance: true },
+    }),
+    prisma.deposit.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    getSetting("BANK_DEPOSIT_ENABLED", "true"),
+    getSetting("CARD_DEPOSIT_ENABLED", "true"),
+  ]);
 
-  const recentDeposits = await prisma.deposit.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
+  const bankEnabled = bankDepositRaw !== "false" && bankDepositRaw !== "0";
+  const cardEnabled = cardDepositRaw !== "false" && cardDepositRaw !== "0";
 
-  const methods = [
-    {
+  const methods = [];
+  if (bankEnabled) {
+    methods.push({
       href: "/deposit/bank",
       icon: Building2,
       title: "Chuyển khoản Ngân hàng (VietQR)",
@@ -33,8 +41,10 @@ export default async function DepositPage() {
       badgeColor: "#10b981",
       color: "#2dd4bf",
       bg: "rgba(20,184,166,0.1)",
-    },
-    {
+    });
+  }
+  if (cardEnabled) {
+    methods.push({
       href: "/deposit/card",
       icon: CreditCard,
       title: "Thẻ Cào Điện Thoại & Thẻ Game",
@@ -43,8 +53,8 @@ export default async function DepositPage() {
       badgeColor: "#f59e0b",
       color: "#f59e0b",
       bg: "rgba(245,158,11,0.1)",
-    },
-  ];
+    });
+  }
 
   const statusMap: Record<string, { label: string; cls: string }> = {
     SUCCESS: { label: "Thành công", cls: "badge-success" },
@@ -72,34 +82,41 @@ export default async function DepositPage() {
 
       {/* Methods */}
       <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Chọn phương thức nạp tiền</h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-        {methods.map((m) => (
-          <Link
-            key={m.href}
-            href={m.href}
-            style={{ textDecoration: "none" }}
-          >
-            <div
-              className="glass-card"
-              style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", padding: 20 }}
+      {methods.length === 0 ? (
+        <div className="glass-card" style={{ textAlign: "center", padding: "32px 20px", marginBottom: 32 }}>
+          <p style={{ fontSize: 16, fontWeight: 600, color: "#f59e0b", marginBottom: 8 }}>⚠️ Hệ thống nạp tiền đang tạm bảo trì</p>
+          <p style={{ fontSize: 13, color: "#94a3b8" }}>Các cổng nạp tiền đang tạm đóng để nâng cấp hệ thống. Vui lòng quay lại sau.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+          {methods.map((m) => (
+            <Link
+              key={m.href}
+              href={m.href}
+              style={{ textDecoration: "none" }}
             >
-              <div style={{ padding: 12, background: m.bg, borderRadius: 12, flexShrink: 0 }}>
-                <m.icon size={24} color={m.color} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                  <p style={{ fontWeight: 600, fontSize: 15, color: "#e2e8f0" }}>{m.title}</p>
-                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: `${m.badgeColor}20`, color: m.badgeColor, fontWeight: 600 }}>
-                    {m.badge}
-                  </span>
+              <div
+                className="glass-card"
+                style={{ display: "flex", alignItems: "center", gap: 16, cursor: "pointer", padding: 20 }}
+              >
+                <div style={{ padding: 12, background: m.bg, borderRadius: 12, flexShrink: 0 }}>
+                  <m.icon size={24} color={m.color} />
                 </div>
-                <p style={{ fontSize: 13, color: "#94a3b8" }}>{m.desc}</p>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <p style={{ fontWeight: 600, fontSize: 15, color: "#e2e8f0" }}>{m.title}</p>
+                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: `${m.badgeColor}20`, color: m.badgeColor, fontWeight: 600 }}>
+                      {m.badge}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13, color: "#94a3b8" }}>{m.desc}</p>
+                </div>
+                <ChevronRight size={18} color="#94a3b8" />
               </div>
-              <ChevronRight size={18} color="#94a3b8" />
-            </div>
-          </Link>
-        ))}
-      </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Recent Deposits */}
       {recentDeposits.length > 0 && (

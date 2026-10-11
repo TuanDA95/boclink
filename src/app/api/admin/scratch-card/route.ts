@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { getSetting, saveSettings } from "@/lib/settings";
 
 const SCRATCH_CARD_KEYS = [
+  "CARD_DEPOSIT_ENABLED",
   "CARD_PARTNER_ID",
   "CARD_PARTNER_KEY",
   "CARD_API_URL",
@@ -55,6 +56,8 @@ export async function POST(req: NextRequest) {
 
 function getDefaultValue(key: string): string {
   switch (key) {
+    case "CARD_DEPOSIT_ENABLED":
+      return "true";
     case "CARD_PARTNER_ID":
       return process.env.CARD_PARTNER_ID || "";
     case "CARD_PARTNER_KEY":

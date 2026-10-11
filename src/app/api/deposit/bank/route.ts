@@ -15,6 +15,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Vui lòng đăng nhập" }, { status: 401 });
   }
 
+  const bankEnabled = (await getSetting("BANK_DEPOSIT_ENABLED", "true")) !== "false";
+  if (!bankEnabled) {
+    return NextResponse.json(
+      { error: "Phương thức nạp tiền qua Ngân hàng hiện đang tạm đóng hoặc bảo trì." },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json();
   const parsed = depositBankSchema.safeParse(body);
   if (!parsed.success) {
@@ -89,10 +97,30 @@ export async function POST(req: NextRequest) {
   const bankAccount = await getSetting("SEPAY_BANK_ACCOUNT", "0123456789");
   const bankName = await getSetting("SEPAY_BANK_NAME", "MBBank");
   const bankOwner = await getSetting("SEPAY_BANK_OWNER", "NGUYEN VAN A");
-  const prefix = await getSetting("SEPAY_PAYMENT_PREFIX", "SUB2S");
+  const prefix = await getSetting("SEPAY_PAYMENT_PREFIX", "NAP");
 
-  // Tạo mã thanh toán duy nhất, truyền prefix từ DB vào hàm
-  const finalContent = generatePaymentCode(session.user.id, prefix);
+  // Tạo mã thanh toán ngắn gọn, duy nhất (không trùng với bất kỳ đơn PENDING nào khác)
+  let finalContent = "";
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = generatePaymentCode(session.user.id, prefix);
+    const existing = await prisma.deposit.findFirst({
+      where: {
+        paymentContent: candidate,
+        status: "PENDING",
+        OR: [{ expiredAt: null }, { expiredAt: { gt: new Date() } }],
+      },
+      select: { id: true },
+    });
+    if (!existing) {
+      finalContent = candidate;
+      break;
+    }
+  }
+
+  if (!finalContent) {
+    const cleanPrefix = prefix.replace(/[^A-Z0-9]/g, "") || "NAP";
+    finalContent = `${cleanPrefix}${Date.now().toString().slice(-6)}`;
+  }
 
   const bankBin = getBankBin(bankName);
   const qrCodeUrl = generateVietQRUrl(bankAccount, bankBin, amount, finalContent, bankOwner);

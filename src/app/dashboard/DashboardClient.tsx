@@ -56,6 +56,8 @@ interface Props {
   deposits: DepositItem[];
   purchases: PurchaseItem[];
   domain: string;
+  bankDepositEnabled?: boolean;
+  cardDepositEnabled?: boolean;
 }
 
 type DepositTab = "bank" | "card";
@@ -68,8 +70,17 @@ const DEPOSIT_METHODS_LABEL: Record<string, string> = {
   CRYPTO: "Tiền điện tử",
 };
 
-export default function DashboardClient({ user, links, deposits, purchases, domain }: Props) {
-  const [depositTab, setDepositTab] = useState<DepositTab>("bank");
+export default function DashboardClient({
+  user,
+  links,
+  deposits,
+  purchases,
+  domain,
+  bankDepositEnabled = true,
+  cardDepositEnabled = true,
+}: Props) {
+  const initialDepositTab: DepositTab = bankDepositEnabled ? "bank" : cardDepositEnabled ? "card" : "bank";
+  const [depositTab, setDepositTab] = useState<DepositTab>(initialDepositTab);
   const [mainTab, setMainTab] = useState<MainTab>("purchases");
   const [bankAmount, setBankAmount] = useState("");
   const [bankStep, setBankStep] = useState<"input" | "qr">("input");
@@ -894,16 +905,27 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
           <div>
             <div className="db-card">
               <div className="dep-tabs">
-                <button className={`dep-tab${depositTab === "bank" ? " active" : ""}`} onClick={() => setDepositTab("bank")}>
-                  <i className="bi bi-bank" /> Ngân Hàng
-                </button>
-                <button className={`dep-tab${depositTab === "card" ? " active" : ""}`} onClick={() => setDepositTab("card")}>
-                  <i className="bi bi-credit-card" /> Thẻ Cào
-                </button>
+                {bankDepositEnabled && (
+                  <button className={`dep-tab${depositTab === "bank" ? " active" : ""}`} onClick={() => setDepositTab("bank")}>
+                    <i className="bi bi-bank" /> Ngân Hàng
+                  </button>
+                )}
+                {cardDepositEnabled && (
+                  <button className={`dep-tab${depositTab === "card" ? " active" : ""}`} onClick={() => setDepositTab("card")}>
+                    <i className="bi bi-credit-card" /> Thẻ Cào
+                  </button>
+                )}
               </div>
 
+              {!bankDepositEnabled && !cardDepositEnabled && (
+                <div className="db-card-body" style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <p style={{ color: "#f59e0b", fontWeight: 600, marginBottom: 8 }}>⚠️ Hệ thống nạp tiền đang tạm đóng</p>
+                  <p style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Các cổng nạp tiền đang tạm bảo trì để nâng cấp.</p>
+                </div>
+              )}
+
               {/* BANK TAB */}
-              {depositTab === "bank" && (
+              {bankDepositEnabled && depositTab === "bank" && (
                 <div className="db-card-body">
                   {bankStep === "input" ? (
                     <>
@@ -968,7 +990,7 @@ export default function DashboardClient({ user, links, deposits, purchases, doma
               )}
 
               {/* CARD TAB */}
-              {depositTab === "card" && (
+              {cardDepositEnabled && depositTab === "card" && (
                 <div className="db-card-body">
                   <form onSubmit={handleCardDeposit}>
                     <div className="form-mb">
