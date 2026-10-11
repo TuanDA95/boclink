@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { getSetting, saveSettings } from "@/lib/settings";
 
 // setting keys chính
-export const CORE_SETTING_KEYS = [
+const CORE_SETTING_KEYS = [
   "FREE_LINK_ENABLED",        // "true" | "false"
   "BANK_DEPOSIT_ENABLED",     // "true" | "false" (Nạp tiền qua ngân hàng)
   "CARD_DEPOSIT_ENABLED",     // "true" | "false" (Nạp tiền qua thẻ cào)
@@ -13,7 +13,7 @@ export const CORE_SETTING_KEYS = [
   "CHAT_LINK_URL",            // URL link chat hỗ trợ (Zalo, Telegram, Fanpage...)
 ] as const;
 
-export const CORE_SETTING_DEFAULTS: Record<string, string> = {
+const CORE_SETTING_DEFAULTS: Record<string, string> = {
   FREE_LINK_ENABLED: "true",
   BANK_DEPOSIT_ENABLED: "true",
   CARD_DEPOSIT_ENABLED: "true",
