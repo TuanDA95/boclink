@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
-import { getSetting } from "@/lib/settings";
 import ChatWidget from "@/components/ChatWidget";
 import "./globals.css";
 
@@ -20,12 +19,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const chatUrl = await getSetting("CHAT_LINK_URL", "");
+  const initialChatUrl = process.env.CHAT_LINK_URL || "";
 
   return (
     <html lang="vi" className={inter.variable}>
@@ -40,7 +39,7 @@ export default async function RootLayout({
       </head>
       <body>
         {children}
-        <ChatWidget initialChatUrl={chatUrl} />
+        <ChatWidget initialChatUrl={initialChatUrl} />
         <Script
           src="https://cdn.jsdelivr.net/npm/sweetalert2@11"
           strategy="beforeInteractive"

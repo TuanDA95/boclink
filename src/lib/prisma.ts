@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 // Check if cached PrismaClient DMMF contains updated model fields
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["warn"] : [],
   });
 }
 

@@ -11,8 +11,15 @@ export async function getSetting(key: string, defaultValue: string = ""): Promis
     if (setting && setting.value !== undefined && setting.value !== null && setting.value !== "") {
       return setting.value;
     }
-  } catch (err) {
-    console.error(`[getSetting error for ${key}]:`, err);
+  } catch (err: any) {
+    if (
+      err?.name === "PrismaClientInitializationError" ||
+      err?.message?.includes("Can't reach database server")
+    ) {
+      // Khi DB đang tắt hoặc trong giai đoạn build tĩnh, dùng fallback mà không spam error stack
+    } else {
+      console.error(`[getSetting error for ${key}]:`, err?.message || err);
+    }
   }
   return process.env[key] || defaultValue;
 }
